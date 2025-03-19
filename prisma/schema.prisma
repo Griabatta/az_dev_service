@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id                Int        @id @default(autoincrement())
+  clientId          String     @unique 
+  apiKeyHash        String     
+  clientSecretHash  String     
+  mpStatToken       String?
+  name              String?
+  createAt          DateTime   @default(now())
+  updateAt          DateTime   @updatedAt
+  analytics         Analytics[]
+  stock_warehouse   Stock_Warehouse[]
+  transactions      Transaction_List[]
+  product           Product_List[]
+}
+
+model Analytics {
+  id                  Int   @id @default(autoincrement())
+  createAt            DateTime   @default(now())
+  updateAt            DateTime   @updatedAt @default(now())
+  //
+  userId              Int
+  user                User      @relation(fields: [userId], references: [id])
+  //dimensions
+  dimensions          Json
+  //metrics
+  revenue             String?
+  ordered_units       String?    
+  unknown_metric      String?      
+  hits_view_pdp       String?    
+  hits_view           String?
+  hits_tocart_search  String?            
+  hits_tocart_pdp     String?        
+  hits_tocart         String?    
+  session_view_search String?              
+  session_view_pdp    String?          
+  session_view        String?      
+  conv_tocart_search  String?            
+  conv_tocart_pdp     String?          
+  conv_tocart         String?      
+  returns             String?  
+  cancellations       String?        
+  delivered_units     String?        
+  position_category   String?          
+}
+
+model Stock_Warehouse {
+  id                  Int     @id @default(autoincrement()) 
+  createAt            DateTime   @default(now())
+  updateAt            DateTime   @updatedAt
+  //
+  userId              Int
+  user                User      @relation(fields: [userId], references: [id])
+  //
+  sku	                Int
+  warehouse_name      String
+  item_code	          String
+  item_name	          String
+  free_to_sell_amount	Int
+  promised_amount	    Int
+  reserved_amount	    Int
+  idc                 Float?
+  
+}
+ 
+
+
+model Transaction_List {
+  id                  Int     @id @default(autoincrement()) 
+  createAt            DateTime   @default(now())
+  updateAt            DateTime   @updatedAt
+  //
+  userId              Int
+  user                User      @relation(fields: [userId], references: [id])
+  // operetions
+  operation_id        BigInt
+  operation_type      String
+  operation_date      String
+  operation_type_name String
+  delivery_charge     Int
+  return_delivery_charge  Int
+  accruals_for_sale   Int
+  sale_commission     Int
+  amount              Float
+  type                String
+  //delivery schema
+  delivery_schema     String?
+  order_date          String?
+  posting_number      String?
+  warehouse_id        Int?
+  //items
+  name_item           String?
+  sku_item            BigInt?
+  //services
+  name_services       String?
+  price_services      Float?
+}
+
+
+model Product_List {
+  id                  Int     @id @default(autoincrement()) 
+  createAt            DateTime   @default(now())
+  updateAt            DateTime   @updatedAt
+  //
+  userId              Int
+  user                User      @relation(fields: [userId], references: [id])
+  //
+  archived            Boolean
+  has_fbo_stocks      Boolean
+  has_fbs_stocks      Boolean
+  is_discounted       Boolean
+  offer_id            String
+  product_id          BigInt
+  // quants
+  quant_code          String?
+  quant_size          Int?
+}
