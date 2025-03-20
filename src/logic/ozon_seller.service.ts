@@ -24,6 +24,15 @@ export class OzonSellerService {
   ): Promise<CreateAnalyticsDto[]> {
 
     if (!headers['Client-Id'] || !headers['Api-Key']) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
+          errorPriority: 3,
+          errorCode: '401',
+          errorServiceName: 'Seller/Analytics'
+        }
+      })
       res.status(401).send({ message: "Unauthorized" });
     };
 
@@ -68,7 +77,11 @@ export class OzonSellerService {
     };
 
     try {
+      Logger.log("-------------------------------")
+      Logger.log("Request data..")
       const response = await axios.post(url, body, { headers });
+      Logger.log("Data received.");
+      Logger.log("Start data conversion..")
       const formatingData = response.data.result.data;
       
       const result: CreateAnalyticsDto[] = formatingData.map(dates => {
@@ -82,8 +95,19 @@ export class OzonSellerService {
           ...metrics                   
         };
       })
+      Logger.log("Data converted.")
+      Logger.log("-------------------------------")
       return result;
     } catch (error) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Request aborted, error: ${error.message}`,
+          errorPriority: 3,
+          errorCode: error.status,
+          errorServiceName: 'Seller/Analytics/Data'
+        }
+      })
       return error.message;
     }
   }
@@ -102,7 +126,7 @@ export class OzonSellerService {
       });
       throw new Error('No data');
     };
-
+    Logger.log("Start import..")
     const data = analyticsData.map(item => ({
       ...item,
       userId
@@ -113,7 +137,9 @@ export class OzonSellerService {
         {
           data: data
         }
-      )
+      );
+      Logger.log("Import success");
+      Logger.log("-------------------------------")
     } catch (error) {
       if (error.status === 500) {
         await this.prisma.journalErrors.create({
@@ -147,6 +173,15 @@ export class OzonSellerService {
     const url = 'https://api-seller.ozon.ru/v2/analytics/stock_on_warehouses';
 
     if (!headers['Client-Id'] || !headers['Api-Key']) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
+          errorPriority: 3,
+          errorCode: '401',
+          errorServiceName: 'Seller/Stock/WareHouse'
+        }
+      })
       res.status(401).send({ message: "Unauthorized" });
     };
 
@@ -158,10 +193,25 @@ export class OzonSellerService {
 
 
     try {
+      Logger.log("-------------------------------")
+      Logger.log("Request data..")
       const response = await axios.post(url, body, { headers });
+      Logger.log("Data received.");
+      Logger.log("Start data conversion..")
       const result = response.data?.result.rows;
+      Logger.log("Data converted");
+      Logger.log("-------------------------------")
       return result;
     } catch (error) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Request aborted, error: ${error.message}`,
+          errorPriority: 3,
+          errorCode: error.status,
+          errorServiceName: 'Seller/Stock/WareHouse'
+        }
+      })
       return error.message;
     }
   }
@@ -181,7 +231,7 @@ export class OzonSellerService {
       });
       throw new Error('No data');
     };
-
+    Logger.log("Start import..")
     const data = stockData.map(item => ({
       ...item,
       userId
@@ -192,7 +242,9 @@ export class OzonSellerService {
         {
           data: data
         }
-      )
+      );
+      Logger.log("Import success");
+      Logger.log("-------------------------------")
     } catch (error) {
 
       if (error.status === 500) {
@@ -229,6 +281,15 @@ export class OzonSellerService {
     const {datefrom, dateto, operation_type, posting_number, transaction_type, page, page_size} = req.body;
 
     if (!headers['Client-Id'] || !headers['Api-Key']) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
+          errorPriority: 3,
+          errorCode: '401',
+          errorServiceName: 'Seller/Transaction'
+        }
+      })
       res.status(401).send({ message: "Unauthorized" });
     };
 
@@ -249,12 +310,16 @@ export class OzonSellerService {
       "page": page || 1,
       "page_size": page_size || 1000
     }
-
+    
     try {
+      Logger.log("-------------------------------")
+      Logger.log("Request data..");
       const response = await axios.post(url, body, { headers });
+      Logger.log("Data received.");
+      Logger.log("Start data conversion..");
+
       const page = response.data.result.page_count;
       let data = response.data.result.operations;
-      console.log(response.data.result.row_count)
       if (page > 1) {
         for (let i = 2; page >= i; i++) {
           const updatedBody = { ...body, page: i };
@@ -262,7 +327,9 @@ export class OzonSellerService {
           data = [...data, ...nextPageResponse.data.result.operations];
         }
       };
-      // console.log(data.length)
+
+      
+
       let result:CreateTransactionDto[] = [];
       result.push(
         ...data.map((item:any) => {
@@ -276,9 +343,19 @@ export class OzonSellerService {
           return item
         })
       )
-      // console.log(result.length)
+      Logger.log("Data converted.")
+      Logger.log("-------------------------------")
       return result;
     } catch (error) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Request aborted, error: ${error.message}`,
+          errorPriority: 3,
+          errorCode: error.status,
+          errorServiceName: 'Seller/Transaction'
+        }
+      })
       return error.message;
     }
   }
@@ -302,13 +379,17 @@ export class OzonSellerService {
       ...item,
       userId
     }));
-    // console.log(data[0][0])
+
+    Logger.log("Start import..");
+
     try {
-      // await this.prisma.transaction_List.createMany(
-      //   {
-      //     data: data
-      //   }
-      // )
+      await this.prisma.transaction_List.createMany(
+        {
+          data: data
+        }
+      );
+      Logger.log("Import Success");
+      Logger.log("-------------------------------")
     } catch (error) {
 
       if (error.status === 500) {
@@ -328,8 +409,10 @@ export class OzonSellerService {
 
   // ----------RESPONSE&&IMPORT---------
   async fetchAndImportTransaction(userId: number, headers: headerDTO, @Req() req: Request, @Res() res: Response) {
+    Logger.log("Start Transaction..")
     const transactionData = await this.getTransactions(headers, req, res);
     await this.importTransaction(userId, transactionData);
+    Logger.log("\nTransaction end.")
   }
 
 
@@ -344,6 +427,15 @@ export class OzonSellerService {
     @Res() res: Response
   ): Promise<CreateProductDto[]> {
     if (!headers['Client-Id'] || !headers['Api-Key']) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
+          errorPriority: 3,
+          errorCode: '401',
+          errorServiceName: 'Seller/ProductList'
+        }
+      })
       res.status(401).send({ message: "Unauthorized" });
     };
     const url = 'https://api-seller.ozon.ru/v3/product/list';
@@ -360,26 +452,83 @@ export class OzonSellerService {
     };
     
     try {
+      Logger.log("-------------------------------")
+      Logger.log("Request data..");
       const response = await axios.post(url, body, { headers });
-      return response.data;
+      Logger.log("Data received.");
+      Logger.log("Start data conversion..");
+      const last_id = response.data.result.last_id;
+      let data = response.data.result.items;
+      
+      if (last_id !== "") {
+        const updatedBody = { ...body, last_id: last_id};
+        const nextPageResponse = await axios.post(url, updatedBody, { headers });
+        data = [...data, ...nextPageResponse.data.result.items];
+      }
+      for (let item of data) {
+        const quants = item.quants;
+        item.quants = JSON.stringify(quants);
+      }
+      Logger.log("Data converted.")
+      Logger.log("-------------------------------")
+      return data;
     } catch (error) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: Number(headers['Client-Id']),
+          errorMassage: `Request aborted, error: ${error.message}`,
+          errorPriority: 3,
+          errorCode: error.status,
+          errorServiceName: 'Seller/ProductList'
+        }
+      })
       return error.message;
     }
   }
   //------IMPORT-------
-  async importProduct(userId: number, tansactionData: CreateProductDto[]) {
+  async importProduct(userId: number, productData: CreateProductDto[]) {
       
+    if (productData.length === 0) {
+      await this.prisma.journalErrors.create({
+        data: {
+          errorUserId: userId,
+          errorMassage: "No data",
+          errorPriority: 2,
+          errorCode: '404',
+          errorServiceName: 'Seller/ProductList'
+        }
+      });
+      throw new Error('No data');
+    };
+
+    const data = productData.map(item => ({
+      ...item,
+      userId
+    }));
+
+    Logger.log("Start import..");
+
     try {
-      // Сохраняем каждую запись аналитики в базу данных
-      for (const data of tansactionData) {
-        await this.prisma.product_List.create({
-          data: {
-            ...data,
-            userId, 
-          },
-        });
-      }
+      await this.prisma.product_List.createMany(
+        {
+          data: data
+        }
+      );
+      Logger.log("Import Success");
+      Logger.log("-------------------------------")
     } catch (error) {
+
+      if (error.status === 500) {
+        await this.prisma.journalErrors.create({
+          data: {
+            errorUserId: userId,
+            errorMassage: error.message,
+            errorPriority: 3,
+            errorCode: '500',
+            errorServiceName: 'Seller/ProductList'
+          }
+        })
+      }
       throw new Error(`Failed to import analytics data: ${error.message}`);
     }
   }

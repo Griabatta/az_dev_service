@@ -160,6 +160,25 @@ export class SellerController {
     }
   }
 
+  @Post('import/product-list')
+  async importProductList(
+    @Headers('Client-Id') clientId: string ,
+    @Headers('Api-Key') apiKey: string,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    const headers: headerDTO = {
+      'Client-Id': clientId,
+      'Api-Key': apiKey,
+    };
+
+    try {
+      const data = await this.OzonSellerService.fetchAndImportProduct(2, headers, req, res);
+      res.json(data);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    }
+  }
 
   //----------------END PRODUCT LIST-------------------
   

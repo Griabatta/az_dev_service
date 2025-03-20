@@ -59,6 +59,5 @@ export class CreateProductDto {
   offer_id:            string
   product_id:          number
   // quants
-  quant_code?:         string
-  quant_size?:         number
+  quants:              string
 }

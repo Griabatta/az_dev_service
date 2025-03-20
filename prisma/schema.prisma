@@ -113,9 +113,7 @@ model Transaction_List {
 
 model Product_List {
   id                  Int     @id @default(autoincrement()) 
-  createAt            DateTime   @default(now())
-  updateAt            DateTime   @updatedAt
-  //
+  
   userId              Int
   user                User      @relation(fields: [userId], references: [id])
   //
@@ -126,8 +124,10 @@ model Product_List {
   offer_id            String
   product_id          BigInt
   // quants
-  quant_code          String?
-  quant_size          Int?
+  quants              String?
+
+  createAt            DateTime   @default(now())
+  updateAt            DateTime   @updatedAt
 }
 
 
