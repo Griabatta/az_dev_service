@@ -233,8 +233,8 @@ export class OzonSellerService {
     };
 
     const dateNow = new Date();
-    const date_from = req.body.date_from ||  new Date(dateNow.setMonth(dateNow.getMonth() - 1)).toISOString(); // За последний месяц
-    const date_to = req.body.date_to || dateNow.toISOString();
+    const date_from = req.body.filter.date.from ||  new Date(dateNow.setMonth(dateNow.getMonth() - 1)).toISOString(); // За последний месяц
+    const date_to = req.body.filter.date.to || dateNow.toISOString();
 
     const body: transactionDTO = {
       "filter": {
