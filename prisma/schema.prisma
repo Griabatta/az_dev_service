@@ -33,31 +33,31 @@ model User {
 model Analytics {
   id                  Int   @id @default(autoincrement())
   createAt            DateTime   @default(now())
-  updateAt            DateTime   @updatedAt @default(now())
+  updateAt            DateTime   @updatedAt 
   //
   userId              Int
-  user                User      @relation(fields: [userId], references: [id])
+  user                User   @relation(fields: [userId], references: [id])
   //dimensions
-  dimensions          Json
+  dimensions          String?
   //metrics
-  revenue             String?
-  ordered_units       String?    
-  unknown_metric      String?      
-  hits_view_pdp       String?    
-  hits_view           String?
-  hits_tocart_search  String?            
-  hits_tocart_pdp     String?        
-  hits_tocart         String?    
-  session_view_search String?              
-  session_view_pdp    String?          
-  session_view        String?      
-  conv_tocart_search  String?            
-  conv_tocart_pdp     String?          
-  conv_tocart         String?      
-  returns             String?  
-  cancellations       String?        
-  delivered_units     String?        
-  position_category   String?          
+  revenue             Int?
+  ordered_units       Int?    
+  unknown_metric      Int?      
+  hits_view_pdp       Int?    
+  hits_view           Int?
+  hits_tocart_search  Int?            
+  hits_tocart_pdp     Int?        
+  hits_tocart         Int?    
+  session_view_search Int?              
+  session_view_pdp    Int?          
+  session_view        Int?      
+  conv_tocart_search  Int?            
+  conv_tocart_pdp     Int?          
+  conv_tocart         Int?      
+  returns             Int?  
+  cancellations       Int?        
+  delivered_units     Int?        
+  position_category   Int?          
 }
 
 model Stock_Warehouse {
@@ -82,34 +82,32 @@ model Stock_Warehouse {
 
 
 model Transaction_List {
-  id                  Int     @id @default(autoincrement()) 
-  createAt            DateTime   @default(now())
-  updateAt            DateTime   @updatedAt
+  id                      Int     @id @default(autoincrement()) 
+  createAt                DateTime   @default(now())
+  updateAt                DateTime   @updatedAt
   //
-  userId              Int
-  user                User      @relation(fields: [userId], references: [id])
+  userId                  Int
+  user                    User      @relation(fields: [userId], references: [id])
   // operetions
-  operation_id        BigInt
-  operation_type      String
-  operation_date      String
-  operation_type_name String
-  delivery_charge     Int
+  operation_id            BigInt
+  operation_type          String
+  operation_date          String
+  operation_type_name     String
+  delivery_charge         Int
   return_delivery_charge  Int
-  accruals_for_sale   Int
-  sale_commission     Int
-  amount              Float
-  type                String
+  accruals_for_sale       Int
+  sale_commission         Int
+  amount                  Float
+  type                    String
   //delivery schema
-  delivery_schema     String?
-  order_date          String?
-  posting_number      String?
-  warehouse_id        Int?
+  delivery_schema         String?
+  order_date              String?
+  posting_number          String?
+  warehouse_id            BigInt?
   //items
-  name_item           String?
-  sku_item            BigInt?
+  items                   String?
   //services
-  name_services       String?
-  price_services      Float?
+  services                String?
 }
 
 
@@ -130,4 +128,19 @@ model Product_List {
   // quants
   quant_code          String?
   quant_size          Int?
+}
+
+
+model JournalErrors {
+  id               Int       @id @default(autoincrement())
+  
+  errorUserId      Int
+  errorCode        String?
+  errorMassage     String
+  errorPriority    Int
+  errorServiceName String
+  priorityDesign   String  @default("{0: small priority, 1: mean priority, 2: hight priority, 3: very hight priority}")
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }

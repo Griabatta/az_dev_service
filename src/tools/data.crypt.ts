@@ -5,7 +5,7 @@ const key = crypto.randomBytes(32); // Ключ шифрования (32 бай�
 const iv = crypto.randomBytes(16);  // Вектор инициализации (16 байт)
 
 // Функция для шифрования
-export function encrypt(text: string): string {
+export async function encrypt(text: string): Promise<string> {
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -13,7 +13,7 @@ export function encrypt(text: string): string {
 }
 
 // Функция для дешифрования
-export function decrypt(encryptedText: string): string {
+export async function decrypt(encryptedText: string): Promise<string> {
   const decipher = crypto.createDecipheriv(algorithm, key, iv);
   let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
   decrypted += decipher.final('utf8');

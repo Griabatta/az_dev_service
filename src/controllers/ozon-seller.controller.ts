@@ -6,6 +6,7 @@ import { stockDTO, analystDTO, transactionDTO, productListDTO, headerDTO } from 
 @Controller('/api/seller')
 export class SellerController {
   constructor(private readonly OzonSellerService: OzonSellerService) {}
+  //----------------ANALYTICS-------------------
 
   @Post('/analytics')
   async Analyst(
@@ -40,7 +41,7 @@ export class SellerController {
     };
 
     try {
-      const data = await this.OzonSellerService.fetchAndImportAnalytics(1, headers, req, res);
+      const data = await this.OzonSellerService.fetchAndImportAnalytics(2, headers, req, res);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });
@@ -48,6 +49,9 @@ export class SellerController {
     
   }
 
+  //----------------END ANALYTICS-------------------
+
+  //----------------STOCK-------------------
 
   @Post('/stock')
   async Stock(
@@ -68,6 +72,30 @@ export class SellerController {
       res.status(500).send({ message: error.message });
     }
   }
+  
+  @Post('import/stock')
+  async importStock(
+    @Headers('Client-Id') clientId: string ,
+    @Headers('Api-Key') apiKey: string,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    const headers: headerDTO = {
+      'Client-Id': clientId,
+      'Api-Key': apiKey,
+    };
+    
+    try {
+      const data = await this.OzonSellerService.fetchAndImportStock(2, headers, req, res);
+      res.json(data);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    }
+  }
+
+  //----------------END STOCK-------------------
+
+  //----------------TRANSACTION-------------------
 
   @Post('/transactions')
   async Transactions(
@@ -89,6 +117,29 @@ export class SellerController {
     }
   }
 
+  @Post('import/transactions')
+  async importTransactions(
+    @Headers('Client-Id') clientId: string ,
+    @Headers('Api-Key') apiKey: string,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    const headers: headerDTO = {
+      'Client-Id': clientId,
+      'Api-Key': apiKey,
+    };
+
+    try {
+      const data = await this.OzonSellerService.fetchAndImportTransaction(2, headers, req, res);
+      res.json(data);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    }
+  }
+
+  //----------------END TRANSACTION-------------------
+
+  //----------------PRODUCT LIST-------------------
   @Post('/product-list')
   async ProductList(
     @Headers('Client-Id') clientId: string ,
@@ -109,6 +160,8 @@ export class SellerController {
     }
   }
 
+
+  //----------------END PRODUCT LIST-------------------
   
 
 

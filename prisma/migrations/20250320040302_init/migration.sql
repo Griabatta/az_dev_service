@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Transaction_List" ALTER COLUMN "items" SET DATA TYPE TEXT,
+ALTER COLUMN "services" SET DATA TYPE TEXT;
