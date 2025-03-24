@@ -17,18 +17,28 @@ datasource db {
 
 model User {
   id                Int        @id @default(autoincrement())
+
   clientId          String     @unique 
-  apiKeyHash        String     
-  clientSecretHash  String     
+  apiKey            String     @unique
+  clientPerforId    String?    @unique
+  clientSecret      String?    @unique
   mpStatToken       String?
   name              String?
+  email             String?     @unique
+  tgId              String?    @unique
+  tableSheetId      String     @unique
+
   createAt          DateTime   @default(now())
   updateAt          DateTime   @updatedAt
+
   analytics         Analytics[]
   stock_warehouse   Stock_Warehouse[]
   transactions      Transaction_List[]
   product           Product_List[]
+  performanceToken  PerformanceToken[]
 }
+
+
 
 model Analytics {
   id                  Int   @id @default(autoincrement())
@@ -89,7 +99,7 @@ model Transaction_List {
   userId                  Int
   user                    User      @relation(fields: [userId], references: [id])
   // operetions
-  operation_id            BigInt
+  operation_id            String
   operation_type          String
   operation_date          String
   operation_type_name     String
@@ -103,7 +113,7 @@ model Transaction_List {
   delivery_schema         String?
   order_date              String?
   posting_number          String?
-  warehouse_id            BigInt?
+  warehouse_id            String?
   //items
   items                   String?
   //services
@@ -122,7 +132,7 @@ model Product_List {
   has_fbs_stocks      Boolean
   is_discounted       Boolean
   offer_id            String
-  product_id          BigInt
+  product_id          String
   // quants
   quants              String?
 
@@ -139,7 +149,20 @@ model JournalErrors {
   errorMassage     String
   errorPriority    Int
   errorServiceName String
-  priorityDesign   String  @default("{0: small priority, 1: mean priority, 2: hight priority, 3: very hight priority}")
+  priorityDesign   String  @default("{0: low priority, 1: mean priority, 2: hight priority, 3: very hight priority}")
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model PerformanceToken {
+  id               Int         @id @default(autoincrement())
+  accessToken      String      
+  expires_in       Int 
+  tokenType        String
+   
+  userId           Int
+  user             User       @relation(fields: [userId], references: [id])
 
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

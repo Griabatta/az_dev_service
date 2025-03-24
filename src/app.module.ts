@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
-import { UserModule } from './modules/user.module';
-import { SellerModule } from './modules/seller.module';
-import { PerformanceModule } from './modules/performance.module';
-import { MPStatModule } from './modules/mpstat.module';
+import { SellerModule } from './Modules/Seller/seller.module';
+import { GoogleSheetsModule } from './Modules/exporter/exports.module';
+import { UserModule } from './Modules/Auth/user.module';
+import { PerformanceModule } from './Modules/performance/performance.module';
+import { MPStatModule } from './Modules/mpstat/mpstat.module';
 
 @Module({
   imports: [
@@ -15,7 +16,10 @@ import { MPStatModule } from './modules/mpstat.module';
     UserModule,
     SellerModule,
     PerformanceModule,
-    MPStatModule
-  ]
+    MPStatModule,
+    GoogleSheetsModule
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

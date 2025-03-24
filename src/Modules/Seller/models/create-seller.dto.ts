@@ -1,3 +1,4 @@
+import { IsBoolean, IsNumber, IsOptional, isString, IsString } from "class-validator"
 
 export class CreateAnalyticsDto {
   dimensions:             string
@@ -33,31 +34,80 @@ export class CreateStockDto {
 };
 
 export class CreateTransactionDto {
-  operation_id:           number; 
+
+  @IsString()
+  operation_id:           string;
+  
+  @IsString() 
   operation_type:         string;
+  
+  @IsString()
   operation_date:         string;
+  
+  @IsString()
   operation_type_name:    string;
+  
+  @IsNumber()
   delivery_charge:        number;
+  
+  @IsNumber()
   return_delivery_charge: number;
+  
+  @IsNumber()
   accruals_for_sale:      number;
+  
+  @IsNumber()
   sale_commission:        number;
+  
+  @IsNumber()
   amount:                 number;
+  
+  @IsString()
   type:                   string;
-  delivery_schema?:       string | null; 
-  order_date?:            string | null; 
-  posting_number?:        string | null; 
-  warehouse_id?:          number | null; 
-  items?:                  any; 
+  
+  @IsString()
+  @IsOptional()
+  delivery_schema?:       string | null;
+  
+  @IsString()
+  @IsOptional() 
+  order_date?:            string | null;
+  
+  @IsString()
+  @IsOptional() 
+  posting_number?:        string | null;
+  
+  @IsString()
+  @IsOptional() 
+  warehouse_id?:          string | null;
+  
+  @IsOptional() 
+  items?:                 any;
+  
+  @IsOptional() 
   services?:              any; 
 }
 
 export class CreateProductDto {
-  archived:            boolean
-  has_fbo_stocks:      boolean
-  has_fbs_stocks:      boolean
-  is_discounted:       boolean
-  offer_id:            string
-  product_id:          number
-  // quants
-  quants:              string
+  @IsBoolean()
+  archived: boolean;
+
+  @IsBoolean()
+  has_fbo_stocks: boolean;
+
+  @IsBoolean()
+  has_fbs_stocks: boolean;
+
+  @IsBoolean()
+  is_discounted: boolean;
+
+  @IsString() 
+  offer_id: string;
+
+  @IsString() 
+  product_id: string; 
+
+  @IsOptional()
+  @IsString()
+  quants?: string; 
 }

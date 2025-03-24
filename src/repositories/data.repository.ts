@@ -1,7 +1,7 @@
 // src/repositories/base.repository.ts
 
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/logic/prisma.service';
+import { PrismaService } from 'src/Modules/Prisma/prisma.service';
 
 @Injectable()
 export abstract class BaseRepository<T> {

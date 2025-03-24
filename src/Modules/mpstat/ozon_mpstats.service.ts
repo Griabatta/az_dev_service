@@ -1,14 +1,13 @@
 import { Injectable, Req, Res } from '@nestjs/common';
-import { fetchCl } from './fetch';
-import { AxiosResponse } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Request, Response } from 'express';
 import { headerDTO } from 'src/entities/dto/fetch-ozon.dto';
 
 @Injectable()
 export class OzonMpstatsService {
-  private fetch: fetchCl;
+  // private fetch: fetchCl;
   constructor() {
-    this.fetch = new fetchCl();
+    // this.fetch = new fetchCl();
   }
 
   async getSoinvest(
@@ -28,7 +27,7 @@ export class OzonMpstatsService {
       res.status(404).send({ message: "Not found sellerPath" })
   }
     const url = `https://mpstats.io/api/oz/get/seller?path=${sellerPath}&d1=${date_from}&d2=${date_to}`
-    const data = await this.fetch.fetchGet(url, headers);
+    const data = await axios.get(url, headers);
     return data;
   }
 }

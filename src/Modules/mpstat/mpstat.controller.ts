@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Headers, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { OzonMpstatsService } from '../logic/ozon_mpstats.service';
+import { OzonMpstatsService } from './ozon_mpstats.service';
  
 @Controller('/api/mpstat')
 export class MpstatsController {
