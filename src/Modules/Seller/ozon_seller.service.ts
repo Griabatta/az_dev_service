@@ -1,6 +1,5 @@
 import { Injectable, Logger, Req, Res } from '@nestjs/common';
 import axios from 'axios';
-import { stockDTO, analystDTO, transactionDTO, productListDTO, headerDTO } from 'src/entities/dto/fetch-ozon.dto';
 import { Request, Response } from 'express';
 import { CreateAnalyticsDto, CreateProductDto, CreateStockDto, CreateTransactionDto } from 'src/Modules/Seller/models/create-seller.dto';
 import { PrismaService } from '../Prisma/prisma.service';
@@ -11,6 +10,7 @@ import { StockRepository } from './repositories/stock-warehouse.repository';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { ProductRepository } from './repositories/productList.repository';
 import { JournalErrorsService } from '../Errors/errors.service';
+import { analystDTO, headerDTO, productListDTO, stockDTO, transactionDTO } from './models/seller.dto';
 
 @Injectable()
 export class OzonSellerService {
