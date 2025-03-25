@@ -6,14 +6,24 @@ import { CreateAnalyticsDto, CreateProductDto, CreateStockDto, CreateTransaction
 import { PrismaService } from '../Prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { DuplicateChecker } from '../../utils/duplicateChecker';
+import { AnalyticsRepository } from './repositories/analytics.repository';
+import { StockRepository } from './repositories/stock-warehouse.repository';
+import { TransactionRepository } from './repositories/transaction.repository';
+import { ProductRepository } from './repositories/productList.repository';
+import { JournalErrorsService } from '../Errors/errors.service';
 
 @Injectable()
 export class OzonSellerService {
 
   
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly duplicateChecker: DuplicateChecker
+    
+    private readonly duplicateChecker: DuplicateChecker,
+    private readonly repAnalyt: AnalyticsRepository,
+    private readonly repStock: StockRepository,
+    private readonly repTrans: TransactionRepository,
+    private readonly repProduct: ProductRepository,
+    private readonly erorrs: JournalErrorsService
   ) {}
 
 
@@ -27,15 +37,7 @@ export class OzonSellerService {
     const {clientId, apiKey, userId} = headers;
 
     if (!clientId || !apiKey || !userId) {
-      await this.prisma.journalErrors.create({
-        data: {
-          errorUserId: Number(userId),
-          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
-          errorPriority: 3,
-          errorCode: '401',
-          errorServiceName: 'Seller/Analytics'
-        }
-      })
+      await this.erorrs.logUnauthorizedError(Number(userId));
       return (`Getting analytics ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);
     };
 
@@ -110,15 +112,15 @@ export class OzonSellerService {
       
       return result;
     } catch (error) {
-      await this.prisma.journalErrors.create({
-        data: {
-          errorUserId: Number(userId),
-          errorMassage: `Request aborted, error: ${error.message}` || 'Unexpected error',
-          errorPriority: 3,
-          errorCode: String(error.status) || '500',
-          errorServiceName: 'Seller/Analytics/Data'
+      await this.erorrs.logError(
+        {
+          userId: Number(userId),
+          message: String(error.message) || "Unexpected error",
+          priority: 3,
+          code: '500',
+          serviceName: "Seller/Analytics/Data/request"
         }
-      });
+      );
       return String(error.message);
     };
   };
@@ -132,31 +134,28 @@ export class OzonSellerService {
 
     Logger.log("Start import..");
 
-    const data = analyticsData.map(item => ({
+    const data = analyticsData.map(item => ({ // добавляем userId
       ...item,
       userId
     }));
 
     try {
-      await this.prisma.analytics.createMany({
-        data: data
-      });
+
+      await this.repAnalyt.createMany(data);  // вызываем метод репозитория, что пренадлежит аналитике
+
       Logger.log("Import success");
       Logger.log("-------------------------------");
-      return { message: "Import success" };
+
     } catch (error) {
-      if (error.status === 500) {
-        await this.prisma.journalErrors.create({
-          data: {
-            errorUserId: userId,
-            errorMassage: String(error.message) || "Unexpected error",
-            errorPriority: 3,
-            errorCode: String(error.status) || '500',
-            errorServiceName: 'Seller/Analytics/Data'
-          }
-        });
-      };
-      
+      await this.erorrs.logError(
+        {
+          userId: Number(userId),
+          message: String(error.message) || "Unexpected error",
+          priority: 3,
+          code: '500',
+          serviceName: "Seller/Analytics/Data/import"
+        }
+      );
       return (`Failed to import analytics data: ${error.message}`);
     }
   }
@@ -173,15 +172,7 @@ export class OzonSellerService {
       const url = 'https://api-seller.ozon.ru/v2/analytics/stock_on_warehouses';
 
       if (!clientId || !apiKey || !userId) {
-        await this.prisma.journalErrors.create({
-          data: {
-            errorUserId: Number(headers.userId),
-            errorMassage: `Unauthorized. No Client-Id or Api-key.`,
-            errorPriority: 3,
-            errorCode: '401',
-            errorServiceName: 'Seller/Stock/WareHouse'
-          }
-        });
+        await this.erorrs.logUnauthorizedError(Number(userId));
         return (`Getting stock data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);
       };
       const {limit, offset, warehouse_type} = req.body || {};
@@ -210,15 +201,15 @@ export class OzonSellerService {
 
         return result;
       } catch (error) {
-        await this.prisma.journalErrors.create({
-          data: {
-            errorUserId: Number(headers.userId),
-            errorMassage: `Request aborted, error: ${error.message}`,
-            errorPriority: 3,
-            errorCode: String(error.status) || '500',
-            errorServiceName: 'Seller/Stock/WareHouse'
+        await this.erorrs.logError(
+          {
+            userId: Number(userId),
+            message: String(error.message) || "Unexpected error",
+            priority: 3,
+            code: '500',
+            serviceName: "Seller/Stock/WareHouse/request"
           }
-        });
+        );
         return String(error.message);
       };
     };
@@ -230,35 +221,33 @@ export class OzonSellerService {
       Logger.log("No new data to import. Data is up-to-date.");
       return true;
     }
+
     Logger.log("Start import..")
+
     const data = stockData.map(item => ({
       ...item,
       userId
     }));
 
     try {
-      await this.prisma.stock_Warehouse.createMany(
-        {
-          data: data
-        }
-      );
+
+      await this.repStock.createMany(data)
+
       Logger.log("Import success");
       Logger.log("-------------------------------")
+
     } catch (error) {
 
-      if (error.status === 500) {
-        await this.prisma.journalErrors.create({
-          data: {
-            errorUserId: userId,
-            errorMassage: error.message,
-            errorPriority: 3,
-            errorCode: String(error.status) || '500',
-            errorServiceName: 'Seller/Stock/WareHouse'
+        await this.erorrs.logError(
+          {
+            userId: Number(userId),
+            message: String(error.message) || "Unexpected error",
+            priority: 3,
+            code: '500',
+            serviceName: "Seller/Stock/WareHouse/import"
           }
-        })
-      }
-
-      return (`Failed to import stocks data: ${error.message}`);
+        );
+        return (`Failed to import stocks data: ${error.message}`);
     }
   }
 
@@ -283,15 +272,7 @@ export class OzonSellerService {
     const {clientId, apiKey, userId} = headers;
 
     if (!clientId || !apiKey || !userId) {
-      await this.prisma.journalErrors.create({
-        data: {
-          errorUserId: Number(userId),
-          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
-          errorPriority: 3,
-          errorCode: '401',
-          errorServiceName: 'Seller/Transaction'
-        }
-      })
+      await this.erorrs.logUnauthorizedError(Number(userId));
       return (`Getting transaction data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);;
     };
 
@@ -359,15 +340,15 @@ export class OzonSellerService {
 
       return result;
     } catch (error) {
-      await this.prisma.journalErrors.create({
-        data: {
-          errorUserId: Number(userId),
-          errorMassage: `Request aborted, error: ${error.message}`,
-          errorPriority: 3,
-          errorCode: String(error.status) || '500',
-          errorServiceName: 'Seller/Transaction'
+      await this.erorrs.logError(
+        {
+          userId: Number(userId),
+          message: String(error.message) || "Unexpected error",
+          priority: 3,
+          code: '500',
+          serviceName: "Seller/Transactions/request"
         }
-      })
+      );
       return String(error.message);
     };
   };
@@ -387,25 +368,24 @@ export class OzonSellerService {
     Logger.log("Start import..");
 
     try {
-      await this.prisma.transaction_List.createMany(
-        {
-          data: data
-        }
-      );
+
+      await this.repTrans.createMany(data);
+      
       Logger.log("Import Success");
       Logger.log("-------------------------------")
+
     } catch (error) {
 
       if (error.status === 500) {
-        await this.prisma.journalErrors.create({
-          data: {
-            errorUserId: userId,
-            errorMassage: error.message,
-            errorPriority: 3,
-            errorCode: String(error.status) || '500',
-            errorServiceName: 'Seller/Transaction'
+        await this.erorrs.logError(
+          {
+            userId: Number(userId),
+            message: String(error.message) || "Unexpected error",
+            priority: 3,
+            code: '500',
+            serviceName: "Seller/Transactions/import"
           }
-        })
+        );
       }
       return (`Failed to import analytics data: ${error.message}`);
     }
@@ -431,15 +411,7 @@ export class OzonSellerService {
     const {clientId, apiKey, userId} = headers;
     
     if (!clientId || !apiKey || !userId) {
-      await this.prisma.journalErrors.create({
-        data: {
-          errorUserId: Number(headers.userId),
-          errorMassage: `Unauthorized. No Client-Id or Api-key.`,
-          errorPriority: 3,
-          errorCode: '401',
-          errorServiceName: 'Seller/ProductList'
-        }
-      })
+      await this.erorrs.logUnauthorizedError(Number(userId));
       return (`Getting products data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);
     };
     const url = 'https://api-seller.ozon.ru/v3/product/list';
@@ -465,38 +437,51 @@ export class OzonSellerService {
       Logger.log("-------------------------------");
       Logger.log("------Product------");
       Logger.log("Request data..");
+
       const response = await axios.post(url, body, { headers: httpHeader });
+
       Logger.log("Data received.");
       Logger.log("Start data conversion..");
+
       const last_id = response.data.result.last_id;
-      let data = response.data.result.items;
-      let productData: CreateProductDto[] = {
-        ...data,
-        product_id: String(data.product_id), // Преобразуем в строку
-        offer_id: String(data.offer_id)
-      };
-      if (last_id !== "") {
-        const updatedBody = { ...body, last_id: last_id};
+      let productData: CreateProductDto[] = response.data.result.items.map(item => ({
+        ...item,
+        product_id: String(item.product_id), // Преобразуем в строку
+        offer_id: String(item.offer_id)
+      }));
+
+      if (last_id) { // Проверяем last_id на наличие значения
+        const updatedBody = { ...body, last_id };
         const nextPageResponse = await axios.post(url, updatedBody, { headers: httpHeader });
-        productData = [...productData, ...nextPageResponse.data.result.items];
-      };
-      for (let item of data) {
+        const nextPageItems = nextPageResponse.data.result.items.map(item => ({
+          ...item,
+          product_id: String(item.product_id),
+          offer_id: String(item.offer_id)
+        }));
+        productData = [...productData, ...nextPageItems];
+      }
+
+      for (let item of productData) {
         const quants = item.quants;
         item.quants = JSON.stringify(quants);
       };
+
       Logger.log("Data converted.");
       Logger.log("-------------------------------")
-      return data;
+
+      return productData;
+
     } catch (error) {
-      await this.prisma.journalErrors.create({
-        data: {
-          errorUserId: Number(headers.userId),
-          errorMassage: `Request aborted, error: ${error.message}`,
-          errorPriority: 3,
-          errorCode: String(error.status) || '500',
-          errorServiceName: 'Seller/ProductList'
+
+      await this.erorrs.logError(
+        {
+          userId: Number(userId),
+          message: String(error.message) || "Unexpected error",
+          priority: 3,
+          code: '500',
+          serviceName: "Seller/ProductList/request"
         }
-      });
+      );
       return String(error.message);
     }
   }
@@ -516,26 +501,23 @@ export class OzonSellerService {
     Logger.log("Start import..");
 
     try {
-      await this.prisma.product_List.createMany(
-        {
-          data: data
-        }
-      );
+
+      await this.repProduct.createMany(data);
+      
       Logger.log("Import Success");
       Logger.log("-------------------------------")
+
     } catch (error) {
 
-      if (error.status === 500) {
-        await this.prisma.journalErrors.create({
-          data: {
-            errorUserId: userId,
-            errorMassage: error.message,
-            errorPriority: 3,
-            errorCode: '500',
-            errorServiceName: 'Seller/ProductList'
-          }
-        });
-      };
+      await this.erorrs.logError(
+        {
+          userId: Number(userId),
+          message: String(error.message) || "Unexpected error",
+          priority: 3,
+          code: '500',
+          serviceName: "Seller/ProductList/import"
+        }
+      );
       return (`Failed to import analytics data: ${error.message}`);
     }
   }
@@ -550,7 +532,9 @@ export class OzonSellerService {
   // }
 
   async fetchDataAndSave(headers: headerDTO) {
+
     Logger.log("Fetching data from Ozon API...");
+
     try {
       const req = {}; 
       const res = {};
@@ -569,10 +553,13 @@ export class OzonSellerService {
       const importStock = typeof filteredStockData === "string"? filteredStockData : await this.importStock(Number(headers.userId), filteredStockData);
       const importTransaction = typeof filteredTransactionData === "string"? filteredTransactionData : await this.importTransaction(Number(headers.userId), filteredTransactionData);
       const importProduct = typeof filteredProductData === "string"? filteredProductData : await this.importProduct(Number(headers.userId), filteredProductData);
+
       if (importAnalytics === true && importStock === true && importTransaction === true && importProduct === true) {
+
         Logger.log("Data fetching and saving completed.");
         return true;
       } else {
+
         Logger.log(`Import status:`);
         Logger.log(`--> Analytics: ${typeof importAnalytics === "boolean"? importAnalytics : false}`);        // req      analytics
         Logger.log(`----> Errors: ${typeof importAnalytics === "string"?  importAnalytics : 'none'}`);          // errors   analytics
@@ -585,10 +572,12 @@ export class OzonSellerService {
         
         Logger.log(`--> Products: ${typeof importProduct === "boolean"? importProduct : false}`);             // req      product
         Logger.log(`----> Errors: ${typeof importProduct === "string"? importProduct : 'none'}`);               // errors   product
+
         return false;
       }
       
     } catch(e) {
+
       Logger.log(e)
       return false;
     }

@@ -1,9 +1,12 @@
 // google-sheets.service.ts
-import { Injectable, NotFoundException, Req, Res } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, Response } from 'express';
 import { google, sheets_v4 } from 'googleapis';
 import { PrismaService } from '../Prisma/prisma.service';
+import { AnalyticsRepository } from '../Seller/repositories/analytics.repository';
+import { StockRepository } from '../Seller/repositories/stock-warehouse.repository';
+import { TransactionRepository } from '../Seller/repositories/transaction.repository';
+import { ProductRepository } from '../Seller/repositories/productList.repository';
 
 @Injectable()
 export class GoogleSheetsService {
@@ -12,7 +15,11 @@ export class GoogleSheetsService {
   
   constructor(
     private configService: ConfigService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly repAnalyt: AnalyticsRepository,
+    private readonly repStock: StockRepository,
+    private readonly repTrans: TransactionRepository,
+    private readonly repProduct: ProductRepository
   ) {
     this.auth = new google.auth.GoogleAuth({
       credentials: {
@@ -161,7 +168,39 @@ export class GoogleSheetsService {
     return response.data;
   }
 
-  
+  async setValidFormForSheet(data: object[]) {
+    const headers = Object.keys(data[0]);
+    const rows = data.map(obj => {
+      return Object.values(obj);
+    })
+    const resultForSheet = [headers, ...rows];
+    return resultForSheet;
+  }
+
+  async getDataForExportByNameRequest(typeRequest: string, userId: number) {
+    let result: object[] = [];
+    try {
+      
+      switch (typeRequest) {
+        case "Analytics":
+          result.push(...await this.repAnalyt.findByUserId(userId) || []);
+          return result
+        case "Stock_Ware":
+          result.push(...await this.repStock.findByUserId(userId) || []);
+          return result
+        case "Transactions":
+          result.push(...await this.repTrans.findByUserId(userId) || []);
+          return result
+        case "ProductList":
+          result.push(...await this.repProduct.findByUserId(userId) || []);
+          return result
+        default:
+          throw new Error("Invalid request type");
+      }
+    } catch (error) {
+      throw new Error(`Failed to fetch data: ${error.message}`);
+    }
+  };
   
 };
 
