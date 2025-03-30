@@ -50,6 +50,13 @@ export class DuplicateChecker {
           }
         });
         break;
+      case 'campaing':
+        existingData = await this.prisma.campaignTemplate.findMany({
+          where: {
+            createdAt: new Date().toISOString().slice(0,10)
+          }
+        })
+        break;
       default:
         return data;
     }

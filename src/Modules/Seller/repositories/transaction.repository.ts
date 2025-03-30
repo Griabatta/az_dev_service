@@ -22,7 +22,29 @@ export class TransactionRepository {
   }
 
   async findByUserId(userId: number) {
-    return this.prisma.transaction_List.findMany({ where: { userId } });
+    return this.prisma.transaction_List.findMany({ 
+      where: { userId },
+      select: {
+        id: true,
+        createAt: true,
+        operation_id: true,
+        operation_type: true,
+        operation_date: true,
+        operation_type_name: true,
+        delivery_charge: true,
+        return_delivery_charge: true,
+        accruals_for_sale: true,
+        sale_commission: true,
+        amount: true,
+        type: true,
+        delivery_schema: true,
+        order_date: true,
+        posting_number: true,
+        warehouse_id: true,
+        items: true,
+        services: true
+      }
+    });
   }
 
   async findByOperationId(operationId: string) {

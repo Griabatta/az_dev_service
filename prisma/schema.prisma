@@ -16,28 +16,52 @@ datasource db {
 
 
 model User {
-  id                Int        @id @default(autoincrement())
+  id                 Int        @id @default(autoincrement())
+ 
+  clientId           String     @unique 
+  apiKey             String     @unique
+  clientPerforId     String?    @unique
+  clientSecret       String?    @unique
+  mpStatToken        String?
+  name               String?
+  email              String?     @unique
+  tgId               String?    @unique
+  tableSheetId       String     @unique
+ 
+  createAt           DateTime   @default(now())
+  updateAt           DateTime   @updatedAt
+ 
+  analytics          Analytics[]
+  stock_warehouse    Stock_Warehouse[]
+  transactions       Transaction_List[]
+  product            Product_List[]
+  performanceTokenId Int?              @unique
+  performanceToken   PerformanceToken? 
 
-  clientId          String     @unique 
-  apiKey            String     @unique
-  clientPerforId    String?    @unique
-  clientSecret      String?    @unique
-  mpStatToken       String?
-  name              String?
-  email             String?     @unique
-  tgId              String?    @unique
-  tableSheetId      String     @unique
-
-  createAt          DateTime   @default(now())
-  updateAt          DateTime   @updatedAt
-
-  analytics         Analytics[]
-  stock_warehouse   Stock_Warehouse[]
-  transactions      Transaction_List[]
-  product           Product_List[]
-  performanceToken  PerformanceToken[]
+  campaintTemplates  CampaignTemplate[]
+  reports            Reports[]
+  bundle             Bundle[]           
 }
 
+model CampaignTemplate {
+  id                Int     @id @default(autoincrement())
+  campaingId        String
+  status            String
+  cpmType           String?
+  advObjectType     String?
+  title             String?
+  fromDate          String?
+  toDate            String?
+  dailyBudget       String?
+  budget            String?
+
+  createdAt         String
+  updatedAt         DateTime  @updatedAt() @default(now())                                          
+  
+  // Связь с пользователем
+  user              User       @relation(fields: [userId], references: [id])
+  userId            Int
+}
 
 
 model Analytics {
@@ -48,11 +72,12 @@ model Analytics {
   userId              Int
   user                User   @relation(fields: [userId], references: [id])
   //dimensions
-  dimensions          String?
+  dimensionsId        Int?
+  dimensionsName      String?
   //metrics
   revenue             Int?
   ordered_units       Int?    
-  unknown_metric      Int?      
+  hits_view_search    Int?    
   hits_view_pdp       Int?    
   hits_view           Int?
   hits_tocart_search  Int?            
@@ -156,14 +181,38 @@ model JournalErrors {
 }
 
 model PerformanceToken {
-  id               Int         @id @default(autoincrement())
-  accessToken      String      
-  expires_in       Int 
-  tokenType        String
-   
-  userId           Int
-  user             User       @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime 
+  createdAt DateTime @default(now())
+  
+  // Связь с пользователем
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique 
+}
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+model Reports {
+  id        Int       @id @default(autoincrement())
+  status    String    @default("In Progress")
+  uuid      String    @unique
+  userId    Int
+  user      User      @relation(fields: [userId],references: [id])
+  type      String    @default("Statistic")
+  createAt  DateTime  @default(now())
+  updateAt  DateTime  @updatedAt() @default(now())
+  bundle    Bundle    @relation(fields: [bundleId], references: [id])
+  bundleId  Int       @unique
+}
+
+model Bundle {
+  id        Int       @id @default(autoincrement())
+  name      String    @default("pack")
+  campaing  String[]  @default([""])
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  status    String    @default("In progress")
+  reports   Reports?  
+  reportsId Int?       @unique
+
+
 }

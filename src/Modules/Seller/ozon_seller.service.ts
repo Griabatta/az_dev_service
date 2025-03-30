@@ -10,7 +10,7 @@ import { StockRepository } from './repositories/stock-warehouse.repository';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { ProductRepository } from './repositories/productList.repository';
 import { JournalErrorsService } from '../Errors/errors.service';
-import { analystDTO, headerDTO, productListDTO, stockDTO, transactionDTO } from './models/seller.dto';
+import { analystDTO, headerDTO, metricGroups, metricTemplate, productListDTO, stockDTO, transactionDTO } from './models/seller.dto';
 
 @Injectable()
 export class OzonSellerService {
@@ -29,101 +29,90 @@ export class OzonSellerService {
 
   //_________________________________ANALYTICS_________________________________
   //-----------RESPONSE--------------
-  async getAnalyst(
-    headers: headerDTO,
-    @Req() req: Request,
-    @Res() res: Response
-  ): Promise<CreateAnalyticsDto[] | string> {
-    const {clientId, apiKey, userId} = headers;
-
+  async getAnalyst(headers: headerDTO, @Req() req: Request): Promise<CreateAnalyticsDto[] | string> {
+    const { clientId, apiKey, userId } = headers;
+  
     if (!clientId || !apiKey || !userId) {
       await this.erorrs.logUnauthorizedError(Number(userId));
-      return (`Getting analytics ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);
-    };
+      return 'Getting analytics ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401';
+    }
 
     const url = 'https://api-seller.ozon.ru/v1/analytics/data';
-    const { datefrom, dateto, dimension, filters, sort, limit, offset, metrics } = req?.body || {};
-    
-    const dateNow = new Date();
-    const date_from = datefrom || new Date(dateNow.setMonth(dateNow.getMonth() - 1)).toISOString().slice(0, 10); // За последний месяц
-    const date_to = dateto || dateNow.toISOString().slice(0, 10);
-    const defaultMetrics = ['revenue', 'ordered_units'];
-    const defaultDimensions = ['sku', 'day'];
-    
-    const metricTemplate = {
-      "revenue": 0,
-      "ordered_units": 0,
-      "unknown_metric": 0,
-      "hits_view_pdp": 0,
-      "hits_view": 0,
-      "hits_tocart_search": 0,
-      "hits_tocart_pdp": 0,
-      "hits_tocart": 0,
-      "session_view_search": 0,
-      "session_view_pdp": 0,
-      "session_view": 0,
-      "conv_tocart_search": 0,
-      "conv_tocart_pdp": 0,
-      "conv_tocart": 0,
-      "returns": 0,
-      "cancellations": 0,
-      "delivered_units": 0,
-      "position_category": 0,
-    };
+    const { datefrom, dateto, dimension, filters, sort, limit, offset } = req?.body || {};
 
-    const body: analystDTO = {
-      "date_from": date_from,
-      "date_to": date_to,
-      "dimension": dimension || defaultDimensions,
-      "filters": filters || [],
-      "sort": sort || [{}],
-      "limit": limit || 1000,
-      "offset": offset || 0,
-      "metrics": metrics || defaultMetrics
-    };
+    const dateNow = new Date();
+    const date_from = datefrom || new Date(dateNow.setMonth(dateNow.getMonth() - 1)).toISOString().slice(0, 10);
+    const date_to = dateto || dateNow.toISOString().slice(0, 10);
+
+    const defaultDimensions = ['sku', 'day'];
+
     const httpHeader = {
       'Client-Id': clientId,
       'Api-Key': apiKey,
       'Content-Type': 'application/json'
     };
-
+  
     try {
 
       Logger.log("-------------------------------");
       Logger.log("------ANALYTICS------");
       Logger.log("Request data..");
-      const response = await axios.post(url, body, { headers: httpHeader });
-      Logger.log("Data received.");
-      Logger.log("Start data conversion..");
-      const formatingData = response.data.result.data;
-      
-      const result: CreateAnalyticsDto[] = formatingData.map(dates => {
-        const metrics = body.metrics.reduce((acc, name, index) => {
-          acc[name] = dates.metrics[index];
-          return acc;
-        }, {} as Record<string, number>);
-        return {
-          "dimensions": JSON.stringify(dates.dimensions), 
-          ...metricTemplate,          
-          ...metrics                   
+
+      // Делаем параллельные запросы для всех групп метрик
+      const requests = metricGroups.map(async metrics => {
+        const body = {
+          date_from,
+          date_to,
+          dimension: dimension || defaultDimensions,
+          filters: filters || [],
+          sort: sort || [{}],
+          limit: limit || 1000,
+          offset: offset || 0,
+          metrics
         };
+        
+        return await axios.post(url, body, { headers: httpHeader });
       });
-      Logger.log("Data converted.");
+  
+      const responses = await Promise.all(requests);
       
-      return result;
+      // Собираем данные из всех ответов
+      const allData = responses.map(r => r.data.result.data);
+
+      // Объединяем метрики для каждого элемента
+      const mergedData = allData[0].map((item, index) => {
+        const baseItem = {
+          dimensionsId: Number(item.dimensions[0]?.id || 0),
+          dimensionsName: item.dimensions[0]?.name || 0,
+          ...metricTemplate // Инициализируем все метрики нулями
+        };
+        
+        // Добавляем метрики из всех запросов
+        allData.forEach((dataGroup, groupIndex) => {
+          const currentItem = dataGroup[index];
+          metricGroups[groupIndex].forEach((metric, metricIndex) => {
+            baseItem[metric] = currentItem.metrics[metricIndex];
+          });
+        });
+        
+        return baseItem;
+      });
+  
+      Logger.log("Data received and merged.");
+      Logger.log("-------------------------------");
+      
+      return mergedData;
     } catch (error) {
-      await this.erorrs.logError(
-        {
-          userId: Number(userId),
-          message: String(error.message) || "Unexpected error",
-          priority: 3,
-          code: '500',
-          serviceName: "Seller/Analytics/Data/request"
-        }
-      );
+      await this.erorrs.logError({
+        userId: Number(userId),
+        message: String(error.message) || "Unexpected error",
+        priority: 3,
+        code: '500',
+        serviceName: "Seller/Analytics/Data/request"
+      });
       return String(error.message);
-    };
-  };
+    }
+  }
   // ----------------IMPORT-------------------
   async importAnalytics(userId: number, analyticsData: CreateAnalyticsDto[]) {
 
@@ -539,7 +528,7 @@ export class OzonSellerService {
       const req = {}; 
       const res = {};
 
-      const analyticsData = await this.getAnalyst(headers, req as Request, res as Response);
+      const analyticsData = await this.getAnalyst(headers, req as Request);
       const stockData = await this.getStock(headers, req as Request, res as Response);
       const transactionData = await this.getTransactions(headers, req as Request, res as Response);
       const productData = await this.getProduct(headers, req as Request, res as Response);

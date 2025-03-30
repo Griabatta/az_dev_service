@@ -1,7 +1,7 @@
 import { Injectable, Req, Res } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { Request, Response } from 'express';
-import { headerDTO } from 'src/entities/dto/fetch-ozon.dto';
+import { headerDTO } from './models/mpstat.dto';
 
 @Injectable()
 export class OzonMpstatsService {
@@ -11,7 +11,7 @@ export class OzonMpstatsService {
   }
 
   async getSoinvest(
-    headers:headerDTO,
+    headers: headerDTO,
     @Req() req: Request,
     @Res() res: Response
   ): Promise<AxiosResponse<any>> {

@@ -7,6 +7,7 @@ import { AnalyticsRepository } from '../Seller/repositories/analytics.repository
 import { StockRepository } from '../Seller/repositories/stock-warehouse.repository';
 import { TransactionRepository } from '../Seller/repositories/transaction.repository';
 import { ProductRepository } from '../Seller/repositories/productList.repository';
+import { keysForAnalytics, keysForProductList, keysForStock, keysForTransactions } from './models/export.models';
 
 @Injectable()
 export class GoogleSheetsService {
@@ -168,13 +169,52 @@ export class GoogleSheetsService {
     return response.data;
   }
 
-  async setValidFormForSheet(data: object[]) {
-    const headers = Object.keys(data[0]);
-    const rows = data.map(obj => {
-      return Object.values(obj);
-    })
-    const resultForSheet = [headers, ...rows];
-    return resultForSheet;
+  async setValidFormForSheet(data: object[], typeRequest: string) {
+    let headers: string[];
+    let rows: any;
+    let resultForSheet: any[][];
+    try {
+      switch (typeRequest) {
+        
+        case "Analytics":
+          headers = keysForAnalytics;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "Stock_Ware":
+          headers = keysForStock;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "Transactions":
+          headers = keysForTransactions;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "ProductList":
+        headers = keysForProductList;
+        rows = data.map(obj => {
+          return Object.values(obj);
+        })
+        resultForSheet = [headers, ...rows];
+        return resultForSheet;
+
+        default:
+          throw new Error("Invalid request type");
+      }
+    } catch(e) {
+      throw new Error(`Failed to formating data: ${e.message || e}`);
+    }
+    
   }
 
   async getDataForExportByNameRequest(typeRequest: string, userId: number) {

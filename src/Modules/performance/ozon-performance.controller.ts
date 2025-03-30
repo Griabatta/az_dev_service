@@ -1,52 +1,45 @@
-import { Body, Controller, Headers, Post, Req, Res } from '@nestjs/common';
-import { Request, Response } from 'express';
+// performance/performance.controller.ts
+import { Controller, Post, Body, Res } from '@nestjs/common';
+import { GetTemplatesRequestDto, TemplateResponseDto } from './models/performance.dto';
 import { OzonPerformanceService } from './ozon_performance.service';
+import { PrismaService } from '../Prisma/prisma.service';
+import { decrypt } from 'src/tools/data.crypt';
+import { headerDTO } from '../Seller/models/seller.dto';
+import { Response } from 'express';
 
-@Controller('/api/performance')
+@Controller('/performance')
 export class PerformanceController {
-  constructor(private readonly ozonPerformanceService: OzonPerformanceService) {}
+  constructor(
+    private readonly performanceService: OzonPerformanceService,
+    private readonly prisma: PrismaService
+  ) {}
 
-  @Post('/performance-token')
-  async PerformanceToken(
-    @Body('client_id') clientId: string,
-    @Body('client_secret') clientSecret: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const headers = {
-      'Content-Type': 'application/json',
-      clientId: clientId,
-      clientSecret: clientSecret,
-      userId: 2, // Пример userId
-    };
-
-    try {
-      const data = await this.ozonPerformanceService.getPerformanceToken(headers);
-      res.status(200).json(data); // Отправляем успешный ответ
-    } catch (error) {
-      res.status(500).send({ message: error.message }); // Отправляем ошибку
-    }
+  async fetchUserData() {
+    return await this.prisma.user.findMany();
   }
 
-  @Post('import/performance-token')
-  async importPerformanceToken(
-    @Headers('Client-Id') clientId: string ,
-    @Headers('Client-Secret') clientSecret: string,
-    @Req() req: Request,
-    @Res() res: Response
-  ) {
-    let headers = {
-      'Content-Type': 'application/json',
-      clientId: clientId,
-      clientSecret: clientSecret,
-      'userId': 2
-    };
+  @Post('/templates')
+  async getCampaigns(@Res() res: Response) {
+    const users = await this.fetchUserData();
+    for (const user of users) {
 
-    try {
-      const data = await this.ozonPerformanceService.fetchAndImportPerfToken(2,headers, req, res);
-      res.json(data);
-    } catch (error) {
-      res.status(500).send({ message: error.message });
+      const clientId = await decrypt(user.clientPerforId || "");
+      const apikey = await decrypt(user.clientSecret || "");
+
+      const headers: headerDTO = {
+        clientPerForId: clientId,
+        clientSecret: apikey,
+        userId: String(user.id)
+      };
+      const result = await this.performanceService.getAllCampaings(headers, res);;
+      // res
+    }
+  }
+  async setReports(@Res() res: Response) {
+    const users = await this.fetchUserData();
+    for (const user of users) {
+      const result = await this.performanceService.sendStatisticsInReport(user.id);;
+      res.send(result);
     }
   }
 }

@@ -1,9 +1,9 @@
 import { Controller, Post, Req, Res, Headers, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { OzonSellerService } from './ozon_seller.service';
-import { headerDTO } from 'src/entities/dto/fetch-ozon.dto';
 import { PrismaService } from '../Prisma/prisma.service';
 import { decrypt } from 'src/tools/data.crypt';
+import { headerDTO } from './models/seller.dto';
 
 @Controller('/api/seller')
 export class SellerController {
@@ -57,7 +57,7 @@ export class SellerController {
     };
 
     try {
-      const data = await this.OzonSellerService.getAnalyst(headers, req, res);
+      const data = await this.OzonSellerService.getAnalyst(headers, req);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });

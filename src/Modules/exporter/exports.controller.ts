@@ -2,6 +2,7 @@ import { Controller, Post, Body, Res, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { GoogleSheetsService } from 'src/Modules/exporter/exports.service';
 import { JournalErrorsService } from '../Errors/errors.service';
+import { SheetName } from './models/export.models';
 
 @Controller('/api/export')
 export class GoogleSheetsController {
@@ -25,7 +26,7 @@ export class GoogleSheetsController {
   async overwriteSheet(@Body() body: { dataType: string, userId: number}, @Res() res: Response) {
     try {
       const data = await this.googleSheetsService.getDataForExportByNameRequest(body.dataType, body.userId);
-
+      
       if (data.length == 0) {
         await this.errors.logError({
           userId: body.userId,
@@ -37,14 +38,14 @@ export class GoogleSheetsController {
         throw new Error("Bad request. No data.");
       }
 
-      const validForm = await this.googleSheetsService.setValidFormForSheet(data);
+      const validForm = await this.googleSheetsService.setValidFormForSheet(data, String(body.dataType));
 
       Logger.log("Data exported.");
-
-      this.googleSheetsService.overwriteSheet(body.dataType, validForm);
+      
+      this.googleSheetsService.overwriteSheet(SheetName(body.dataType), validForm);
       res.send({ message: "Successful export." });
       
-    } catch (e) {
+    } catch (e) { 
       Logger.log("Data not exported.");
       await this.errors.logError({
         userId: body.userId,

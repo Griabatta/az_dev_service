@@ -1,0 +1,1 @@
+export type headerDTO = Record<string, string>;
