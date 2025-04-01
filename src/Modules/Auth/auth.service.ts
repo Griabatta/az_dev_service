@@ -1,12 +1,15 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../Prisma/prisma.service';
 import { decrypt, encrypt } from 'src/tools/data.crypt';
 import { CreateUserDto } from './models/create-user.dto';
+import { TokenService } from '../performance/utils/token/token.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,
+    private readonly token: TokenService
+  ) {}
 
   private async hashData(data: string): Promise<string> {
     const saltRounds = 10;
@@ -51,7 +54,7 @@ export class UserService {
     };
 
 
-    const userCreate = this.prisma.user.create({
+    const userCreate = await this.prisma.user.create({
       data: {
         clientId: ClientId,
         apiKey: ApiKey,
@@ -64,6 +67,31 @@ export class UserService {
         mpStatToken: mpstat,
       },
     });
+
+    
+    const userCreated = await this.prisma.user.findFirst({
+      where: {
+        clientId: ClientId
+      },
+      select: {
+        id: true,
+        clientPerforId: true,
+        clientSecret: true
+      }
+    })
+
+    const paramsForToken = {
+      userId: userCreated?.id,
+      clientPerForId: await decrypt(userCreated?.clientPerforId || ""),
+      clientSecret: await decrypt(userCreated?.clientSecret || "")
+    };
+
+
+    if (userCreated) {
+      await this.token.createToken(paramsForToken)
+    }
+
+
     return userCreate;
   };
 
@@ -98,6 +126,10 @@ export class UserService {
   async getIdTable(req: any) {
     const url = req.originalUrl;
     console.log(url)
+  }
+
+  async getAllUsers() {
+    return this.prisma.user.findMany();
   }
   
 }

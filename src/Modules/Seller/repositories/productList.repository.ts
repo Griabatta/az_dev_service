@@ -22,7 +22,23 @@ export class ProductRepository {
   }
 
   async findByUserId(userId: number) {
-    return this.prisma.product_List.findMany({ where: { userId } });
+    if (!userId) {
+      return 0;
+    }
+    return this.prisma.product_List.findMany({ 
+      where: { userId },
+      select: {
+        id: true,
+        createAt: true,
+        archived: true,
+        has_fbo_stocks: true,
+        has_fbs_stocks: true,
+        is_discounted: true,
+        offer_id: true,
+        product_id: true,
+        quants: true
+      }
+    });
   }
 
   async findByOfferId(offerId: string) {

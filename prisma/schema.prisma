@@ -16,43 +16,62 @@ datasource db {
 
 
 model User {
-  id                Int        @id @default(autoincrement())
+  id                 Int        @id @default(autoincrement())
+ 
+  clientId           String     @unique 
+  apiKey             String     @unique
+  clientPerforId     String?    @unique
+  clientSecret       String?    @unique
+  mpStatToken        String?
+  name               String?
+  email              String?     @unique
+  tgId               String?    @unique
+  tableSheetId       String     @unique
+ 
+  createAt           DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt           DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+ 
+  analytics          Analytics[]
+  stock_warehouse    Stock_Warehouse[]
+  transactions       Transaction_List[]
+  product            Product_List[]
+  performanceTokenId Int?              @unique
+  performanceToken   PerformanceToken? 
 
-  clientId          String     @unique 
-  apiKey            String     @unique
-  clientPerforId    String?    @unique
-  clientSecret      String?    @unique
-  mpStatToken       String?
-  name              String?
-  email             String?     @unique
-  tgId              String?    @unique
-  tableSheetId      String     @unique
-
-  createAt          DateTime   @default(now())
-  updateAt          DateTime   @updatedAt
-
-  analytics         Analytics[]
-  stock_warehouse   Stock_Warehouse[]
-  transactions      Transaction_List[]
-  product           Product_List[]
-  performanceToken  PerformanceToken[]
+  campaintTemplates  CampaignTemplate[]
+  reports            Reports[]
+  bundle             Bundle[]       
+  camaignItem        CampaignItem[]    
 }
 
+model CampaignTemplate {
+  id                Int     @id @default(autoincrement())
+  campaignId        String  @unique
+  status            String
+  cpmType           String?
+  advObjectType     String?
+  title             String?
+  fromDate          String?
+  toDate            String?
+  dailyBudget       String?
+  budget            String?                                       
+  
+  user              User       @relation(fields: [userId], references: [id])
+  userId            Int
+  
+  createdAt         DateTime @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updatedAt         DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))   
+}
 
 
 model Analytics {
   id                  Int   @id @default(autoincrement())
-  createAt            DateTime   @default(now())
-  updateAt            DateTime   @updatedAt 
-  //
-  userId              Int
-  user                User   @relation(fields: [userId], references: [id])
-  //dimensions
-  dimensions          String?
-  //metrics
+
+  dimensionsId        Int?
+  dimensionsName      String?
   revenue             Int?
   ordered_units       Int?    
-  unknown_metric      Int?      
+  hits_view_search    Int?    
   hits_view_pdp       Int?    
   hits_view           Int?
   hits_tocart_search  Int?            
@@ -67,17 +86,18 @@ model Analytics {
   returns             Int?  
   cancellations       Int?        
   delivered_units     Int?        
-  position_category   Int?          
+  position_category   Int?       
+
+  userId              Int
+  user                User   @relation(fields: [userId], references: [id])
+  
+  createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))   
 }
 
 model Stock_Warehouse {
   id                  Int     @id @default(autoincrement()) 
-  createAt            DateTime   @default(now())
-  updateAt            DateTime   @updatedAt
-  //
-  userId              Int
-  user                User      @relation(fields: [userId], references: [id])
-  //
+  
   sku	                Int
   warehouse_name      String
   item_code	          String
@@ -87,18 +107,18 @@ model Stock_Warehouse {
   reserved_amount	    Int
   idc                 Float?
   
+  userId              Int
+  user                User      @relation(fields: [userId], references: [id])
+  
+  createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
 }
  
 
 
 model Transaction_List {
   id                      Int     @id @default(autoincrement()) 
-  createAt                DateTime   @default(now())
-  updateAt                DateTime   @updatedAt
-  //
-  userId                  Int
-  user                    User      @relation(fields: [userId], references: [id])
-  // operetions
+
   operation_id            String
   operation_type          String
   operation_date          String
@@ -108,16 +128,19 @@ model Transaction_List {
   accruals_for_sale       Int
   sale_commission         Int
   amount                  Float
-  type                    String
-  //delivery schema
+  type                    String?
   delivery_schema         String?
   order_date              String?
   posting_number          String?
   warehouse_id            String?
-  //items
   items                   String?
-  //services
   services                String?
+
+  userId                  Int
+  user                    User      @relation(fields: [userId], references: [id])
+  
+  createAt                DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt                DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
 }
 
 
@@ -136,8 +159,8 @@ model Product_List {
   // quants
   quants              String?
 
-  createAt            DateTime   @default(now())
-  updateAt            DateTime   @updatedAt
+  createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
 }
 
 
@@ -151,19 +174,74 @@ model JournalErrors {
   errorServiceName String
   priorityDesign   String  @default("{0: low priority, 1: mean priority, 2: hight priority, 3: very hight priority}")
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updatedAt        DateTime  @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
 }
 
 model PerformanceToken {
-  id               Int         @id @default(autoincrement())
-  accessToken      String      
-  expires_in       Int 
-  tokenType        String
-   
-  userId           Int
-  user             User       @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique 
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  updatedAt DateTime @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp")) 
+  createdAt DateTime @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+}
+
+model Reports {
+  id        Int       @id @default(autoincrement())
+  status    String    @default("In Progress")
+  uuid      String    @unique
+  type      String    @default("SKU")
+
+  userId    Int
+  user      User      @relation(fields: [userId],references: [id])
+  
+  bundle    Bundle    @relation(fields: [bundleId], references: [id])
+  bundleId  Int       @unique
+
+  createAt  DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt  DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+}
+
+model Bundle {
+  id        Int       @id @default(autoincrement())
+  type      String?   
+  campaigns String[]  @unique
+  status    String    @default("In progress")
+
+  userId    Int      
+  user      User      @relation(fields: [userId], references: [id])
+
+  reports   Reports?  
+  reportsId Int?      @unique
+
+  createAt  DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt  DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+}
+
+model CampaignItem {
+  id          Int      @id @default(autoincrement())
+  searchQuery String?   
+  sku         String?   
+  title       String?   
+  price       String?   
+  views       Int?
+  clicks      Int?
+  ctr         String?   
+  toCart      Int?
+  avgBid      String?   
+  moneySpent  String?   
+  orders      Int   ?   
+  ordersMoney String?   
+  models      Int?
+  modelsMoney String?   
+  drr         String?   
+  createdAt   DateTime @default(now())   
+  createdAtDB String  
+  campaignId  String  
+  userId      Int       
+  user        User   @relation(fields: [userId], references: [id])
+  type        String
 }

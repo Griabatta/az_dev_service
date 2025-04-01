@@ -32,6 +32,30 @@ export class AnalyticsRepository {
   async findByUserId(userId: number) {
     return this.prisma.analytics.findMany({
       where: { userId },
+      select: {
+        id: true,
+        createAt: true,
+        dimensionsId: true,
+        dimensionsName: true,
+        revenue: true,
+        ordered_units: true,
+        hits_view_search: true,
+        hits_view_pdp: true,
+        hits_view: true,
+        hits_tocart_search: true,
+        hits_tocart_pdp: true,
+        hits_tocart: true,
+        session_view_search: true,
+        session_view_pdp: true,
+        session_view: true,
+        conv_tocart_search: true,
+        conv_tocart_pdp: true,
+        conv_tocart: true,
+        returns: true,
+        cancellations: true,
+        delivered_units: true,
+        position_category: true,
+      }
     });
   }
 

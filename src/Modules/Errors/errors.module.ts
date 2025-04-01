@@ -7,6 +7,6 @@ import { JournalErrorsService } from './errors.service';
 @Module({
   controllers: [JournalErrorsController],
   providers: [PrismaService, JournalErrorsRepository, JournalErrorsService],
-  exports: [JournalErrorsService], // Для использования в других модулях
+  exports: [JournalErrorsService, JournalErrorsRepository], 
 })
 export class JournalErrorsModule {}

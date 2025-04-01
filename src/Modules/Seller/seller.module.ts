@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SellerController } from 'src/Modules/Seller/ozon-seller.controller';
 import { OzonSellerService } from 'src/Modules/Seller/ozon_seller.service';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
@@ -8,10 +8,18 @@ import { StockRepository } from './repositories/stock-warehouse.repository';
 import { AnalyticsRepository } from './repositories/analytics.repository';
 import { TransactionRepository } from './repositories/transaction.repository';
 import { ProductRepository } from './repositories/productList.repository';
-import { JournalErrorsRepository } from '../Errors/repositories/error.repository';
-import { JournalErrorsService } from '../Errors/errors.service';
+import { UserModule } from '../Auth/user.module';
+import { JournalErrorsModule } from '../Errors/errors.module';
+import { PerformanceModule } from '../performance/performance.module';
+import { GoogleSheetsModule } from '../exporter/exports.module';
 
 @Module({
+  imports: [
+    UserModule,
+    JournalErrorsModule,
+    PerformanceModule,
+    forwardRef(() => GoogleSheetsModule)
+  ],
   controllers: [SellerController],
   providers: [
     OzonSellerService,
@@ -23,9 +31,7 @@ import { JournalErrorsService } from '../Errors/errors.service';
     AnalyticsRepository,
     TransactionRepository,
     ProductRepository,
-    JournalErrorsRepository,
-    JournalErrorsService
   ],
-  exports: [StockRepository, AnalyticsRepository, TransactionRepository, ProductRepository]
+  exports: [StockRepository, AnalyticsRepository, TransactionRepository, ProductRepository, OzonSellerService]
 })
 export class SellerModule {}

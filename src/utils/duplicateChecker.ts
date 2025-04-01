@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../Modules/Prisma/prisma.service';
 
 @Injectable()
 export class DuplicateChecker {
   constructor(private readonly prisma: PrismaService) {}
 
-  async checkAndFilterDuplicates(type: string, data: any[], keys: string[]): Promise<any[] | string> {
+  async checkAndFilterDuplicates(type: string, data: any[], keys: string[]): Promise<any[]> {
     if (!Array.isArray(data)) {
-      throw new TypeError('Data must be an array');
+      Logger.log('Data must be an array', "DUPLICATE");
     }
 
     let existingData;
@@ -50,10 +50,26 @@ export class DuplicateChecker {
           }
         });
         break;
+      case 'campaing':
+        existingData = await this.prisma.campaignTemplate.findMany({
+          where: {
+            createdAt: new Date().toISOString().slice(0,10)
+          }
+      });
+        break;
+      case 'campaignItem':
+        existingData = await this.prisma.campaignItem.findMany({
+          where: {
+            createdAt: new Date().toISOString().slice(0,10)
+          }
+      });
+        break;
       default:
         return data;
     }
-
+    if (existingData.length < 1) {
+      return data
+    }
     const filteredData = data.filter(item => {
       return !existingData.some(existingItem => {
         return keys.every(key => {

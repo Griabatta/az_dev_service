@@ -1,28 +1,26 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GoogleSheetsController } from 'src/Modules/exporter/exports.controller';
 import { GoogleSheetsService } from 'src/Modules/exporter/exports.service';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
-import { AnalyticsRepository } from '../Seller/repositories/analytics.repository';
-import { StockRepository } from '../Seller/repositories/stock-warehouse.repository';
-import { TransactionRepository } from '../Seller/repositories/transaction.repository';
-import { ProductRepository } from '../Seller/repositories/productList.repository';
-import { JournalErrorsService } from '../Errors/errors.service';
-import { JournalErrorsRepository } from '../Errors/repositories/error.repository';
+import { PerformanceModule } from '../performance/performance.module';
+import { SellerModule } from '../Seller/seller.module';
+import { UserModule } from '../Auth/user.module';
+import { JournalErrorsModule } from '../Errors/errors.module';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    PerformanceModule,
+    forwardRef(() => SellerModule),
+    UserModule,
+    JournalErrorsModule
+  ],
   providers: [
     GoogleSheetsService,
     PrismaService,
-    AnalyticsRepository,
-    StockRepository,
-    TransactionRepository,
-    ProductRepository,
-    JournalErrorsService,
-    JournalErrorsRepository
   ],
   controllers: [GoogleSheetsController],
-  exports: [GoogleSheetsService, PrismaService],
+  exports: [GoogleSheetsService],
 })
 export class GoogleSheetsModule {}

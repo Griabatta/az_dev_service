@@ -7,19 +7,27 @@ import { AnalyticsRepository } from '../Seller/repositories/analytics.repository
 import { StockRepository } from '../Seller/repositories/stock-warehouse.repository';
 import { TransactionRepository } from '../Seller/repositories/transaction.repository';
 import { ProductRepository } from '../Seller/repositories/productList.repository';
+import { keysForAnalytics, keysForPerFormance, keysForProductList, keysForStock, keysForTransactions, SheetName } from './models/export.models';
+import { PerformanceRepository } from '../performance/repositories/performance.repository';
+import { JournalErrorsService } from '../Errors/errors.service';
+import { UserService } from '../Auth/auth.service';
 
 @Injectable()
 export class GoogleSheetsService {
   private readonly sheets = google.sheets('v4');
   private readonly auth: any;
+  private readonly logger = new Logger(GoogleSheetsService.name)
   
   constructor(
-    private configService: ConfigService,
+    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly repAnalyt: AnalyticsRepository,
     private readonly repStock: StockRepository,
     private readonly repTrans: TransactionRepository,
-    private readonly repProduct: ProductRepository
+    private readonly repProduct: ProductRepository,
+    private readonly performanceRepo: PerformanceRepository,
+    private readonly error: JournalErrorsService,
+    private readonly user: UserService
   ) {
     this.auth = new google.auth.GoogleAuth({
       credentials: {
@@ -45,21 +53,21 @@ export class GoogleSheetsService {
     });
   
     if (!userWithAllData) {
-      throw new NotFoundException('User not found');
+      this.logger.error('User not found');
     }
   
     const exportData = {
       userInfo: {
-        id: userWithAllData.id,
-        email: userWithAllData.email,
-        name: userWithAllData.name,
-        tableSheetId: userWithAllData.tableSheetId
+        id: userWithAllData?.id,
+        email: userWithAllData?.email,
+        name: userWithAllData?.name,
+        tableSheetId: userWithAllData?.tableSheetId
       },
-      analytics: userWithAllData.analytics,
-      stock: userWithAllData.stock_warehouse,
-      transactions: userWithAllData.transactions,
-      products: userWithAllData.product,
-      performanceTokens: userWithAllData.performanceToken
+      analytics: userWithAllData?.analytics,
+      stock: userWithAllData?.stock_warehouse,
+      transactions: userWithAllData?.transactions,
+      products: userWithAllData?.product,
+      performanceTokens: userWithAllData?.performanceToken
     };
     
     return exportData;
@@ -168,13 +176,76 @@ export class GoogleSheetsService {
     return response.data;
   }
 
-  async setValidFormForSheet(data: object[]) {
-    const headers = Object.keys(data[0]);
-    const rows = data.map(obj => {
-      return Object.values(obj);
-    })
-    const resultForSheet = [headers, ...rows];
-    return resultForSheet;
+  async setValidFormForSheet(data: object[], typeRequest: string) {
+    let headers: string[];
+    let rows: any;
+    let resultForSheet: any[][];
+    try {
+      switch (typeRequest) {
+        
+        case "Analytics":
+          headers = keysForAnalytics;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "Stock_Ware":
+          headers = keysForStock;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "Transactions":
+          headers = keysForTransactions;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "ProductList":
+          headers = keysForProductList;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+
+        case "Trafarets": {
+          headers = keysForPerFormance;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+        }
+        case "Search": {
+          headers = keysForPerFormance;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+        }
+        case "Banner": {
+          headers = keysForPerFormance;
+          rows = data.map(obj => {
+            return Object.values(obj);
+          })
+          resultForSheet = [headers, ...rows];
+          return resultForSheet;
+        }
+        default:
+          this.logger.error("Invalid request type");
+      }
+    } catch(e) {
+      this.logger.error(`Failed to formating data: ${e.message || e}`);
+    }
+    
   }
 
   async getDataForExportByNameRequest(typeRequest: string, userId: number) {
@@ -194,13 +265,74 @@ export class GoogleSheetsService {
         case "ProductList":
           result.push(...await this.repProduct.findByUserId(userId) || []);
           return result
+        case "Trafarets":
+          result.push(...await this.performanceRepo.getDataForExportTrafarets(userId) || [])
+          return result;
+        case "Search":
+          result.push(...await this.performanceRepo.getDataForExportSearch(userId) || [])
+          return result;
+        case "Banner":
+        result.push(...await this.performanceRepo.getDataForExportBanner(userId) || [])
+        return result;
         default:
-          throw new Error("Invalid request type");
+          this.logger.error("Invalid request type");
       }
     } catch (error) {
-      throw new Error(`Failed to fetch data: ${error.message}`);
+      this.logger.error(`Failed to fetch data: ${error.message}`);
     }
   };
   
+  async exportData(params: { 
+    sheetName: string; 
+    data: any[][];
+    hidden?: boolean;
+  }) {
+
+    await this.ensureSheetExists(params.sheetName, params.hidden ?? false);
+    return this.appendData(params.sheetName, params.data);
+  }
+
+  async ExportInSheet(type: string) {
+    
+    
+    const users = await this.user.getAllUsers();
+    if (!users) {
+      Logger.log("Users not found")
+    };
+    users.map(async user => {
+        try {
+          const data = await this.getDataForExportByNameRequest(type, user.id);
+          
+          if (data?.length == 0) {
+            await this.error.logError({
+              userId: user.id,
+              message: "Bad request. No data.",
+              serviceName: type,
+              code: "400",
+              priority: 2
+            })
+            this.logger.error("Bad request. No data.");
+          }
+
+          const validForm = await this.setValidFormForSheet(data || [], String(type));
+          
+
+          Logger.log(`Data exported. For User ${user.email}`);
+          
+          await this.overwriteSheet(SheetName(type), validForm || []);
+        } catch (e) {
+          Logger.log("Data not exported.");
+          await this.error.logError({
+            userId: user.id,
+            message: "Failed to export data to table.",
+            serviceName: type,
+            code: "500",
+            priority: 2
+          })
+        }
+    })
+      
+      
+  }
 };
 

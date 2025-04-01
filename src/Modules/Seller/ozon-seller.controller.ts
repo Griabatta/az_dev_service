@@ -1,9 +1,9 @@
 import { Controller, Post, Req, Res, Headers, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { OzonSellerService } from './ozon_seller.service';
-import { headerDTO } from 'src/entities/dto/fetch-ozon.dto';
 import { PrismaService } from '../Prisma/prisma.service';
 import { decrypt } from 'src/tools/data.crypt';
+import { headerDTO } from './models/seller.dto';
 
 @Controller('/api/seller')
 export class SellerController {
@@ -16,30 +16,6 @@ export class SellerController {
     return await this.prisma.user.findMany();
   }
 
-  @Post('/fetch-and-import')
-  async fetchAndImport() {
-    let result: boolean = false;
-    try {
-      const users = await this.fetchUserData();
-      for (const user of users) {
-        const clientId = await decrypt(user.clientId);
-        const apikey = await decrypt(user.apiKey);
-
-        const headers: headerDTO = {
-          clientId: clientId,
-          apiKey: apikey,
-          userId: String(user.id)
-        };
-        result = await this.OzonSellerService.fetchDataAndSave(headers);
-        
-      }
-      if (result) {
-        Logger.log({ message: 'Data fetched and imported successfully' });
-      } 
-    } catch (error) {
-        Logger.error(error.message);
-    }
-  }
 
   //----------------ANALYTICS-------------------
 
@@ -57,7 +33,7 @@ export class SellerController {
     };
 
     try {
-      const data = await this.OzonSellerService.getAnalyst(headers, req, res);
+      const data = await this.OzonSellerService.getAnalyst(headers, req);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });

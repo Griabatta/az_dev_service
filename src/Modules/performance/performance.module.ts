@@ -1,10 +1,36 @@
+import { forwardRef, Module } from "@nestjs/common";
+import { PerformanceController } from "./ozon-performance.controller";
+import { OzonPerformanceService } from "./ozon_performance.service";
+import { PerformanceScheduleModule } from "./shedule/performance_shedule.module";
+import { PerformanceRepository } from "./repositories/performance.repository";
+import { JournalErrorsModule } from "../Errors/errors.module";
+import { PrismaModule } from "../Prisma/prisma.module";
+import { PerformanceCampaingsRep } from "./repositories/campaings.repostiroty";
+import { TokenModule } from "./utils/token/token.module";
+import { UserModule } from "../Auth/user.module";
+import { ScheduleModule } from "@nestjs/schedule";
 
-import { Module } from '@nestjs/common';
-import { PrismaService } from 'src/Modules/Prisma/prisma.service';
-import { PerformanceController } from './ozon-performance.controller';
-import { OzonPerformanceService } from './ozon_performance.service';
+
 @Module({
-  controllers: [PerformanceController],
-  providers: [OzonPerformanceService, PrismaService],
+  imports: [
+
+    ScheduleModule.forRoot(),
+    PerformanceScheduleModule,
+    JournalErrorsModule,
+    PrismaModule,
+    forwardRef(() => TokenModule),
+    UserModule,
+
+  ],
+  providers: [
+    OzonPerformanceService,
+    PerformanceRepository,
+    PerformanceCampaingsRep
+  ],
+  exports: [
+    OzonPerformanceService,
+    PerformanceRepository,
+    PerformanceCampaingsRep
+  ]
 })
 export class PerformanceModule {}

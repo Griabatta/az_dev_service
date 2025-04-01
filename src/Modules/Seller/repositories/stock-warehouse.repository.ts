@@ -22,8 +22,22 @@ export class StockRepository {
   }
 
   async findByUserId(userId: number) {
-    return this.prisma.stock_Warehouse.findMany({ where: { userId } });
-  }
+    return this.prisma.stock_Warehouse.findMany({ 
+      where: { userId },
+      select: {
+        id: true,
+        createAt: true,
+        sku: true,
+        warehouse_name: true,
+        item_code: true,
+        item_name: true,
+        free_to_sell_amount: true,
+        promised_amount: true,
+        reserved_amount: true,
+        idc: true
+      }
+    });
+  };
 
   async findBySku(userId: number, sku: number) {
     return this.prisma.stock_Warehouse.findMany({
