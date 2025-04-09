@@ -1,6 +1,3 @@
--- DropIndex
-DROP INDEX "CampaignItem_campaignId_key";
-
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
@@ -20,6 +17,10 @@ ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "PerformanceToken" ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp;
+
+-- AlterTable
+ALTER TABLE "ProductReview" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
+ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
 ALTER TABLE "Product_List" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,

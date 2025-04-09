@@ -13,10 +13,12 @@ import { JournalErrorsService } from '../Errors/errors.service';
 import { analystDTO, headerDTO, metricGroups, metricTemplate, productListDTO, stockDTO, transactionDTO } from './models/seller.dto';
 import { decrypt } from 'src/tools/data.crypt';
 import { UserService } from '../Auth/auth.service';
+import { formatISO, subMonths } from 'date-fns';
 
 @Injectable()
 export class OzonSellerService {
 
+  private readonly logger = new Logger(OzonSellerService.name)
   
   constructor(
     
@@ -28,6 +30,139 @@ export class OzonSellerService {
     private readonly erorrs: JournalErrorsService,
     private readonly user: UserService
   ) {}
+  async fetchAndImportAnalytics() {
+    
+    const users = await this.user.getAllUsers();
+    
+    for (const user of users) {
+      try {
+        const clientId = await decrypt(user.clientId);
+        const apikey = await decrypt(user.apiKey);
+        
+        const headers: headerDTO = {
+          clientId: clientId,
+          apiKey: apikey,
+          userId: String(user.id)
+        };
+        
+        // Добавляем задержку между запросами (например, 1 секунда)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const analyticsData = await this.getAnalyst(headers);
+        const importAnalytics = typeof analyticsData === "string" 
+          ? analyticsData 
+          : await this.importAnalytics(Number(headers.userId), analyticsData);
+        
+      } catch (error) {
+        if (error.response?.status === 429) {
+          // Если получили 429, увеличиваем задержку
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue; // Попробуем снова
+        }
+        console.error(`Error for user ${user.id}:`, error);
+      }
+    }
+  };
+
+  async fetchAndImportStock() {
+    const users = await this.user.getAllUsers();
+    
+    for (const user of users) {
+      try {
+        const clientId = await decrypt(user.clientId);
+        const apikey = await decrypt(user.apiKey);
+        
+        const headers: headerDTO = {
+          clientId: clientId,
+          apiKey: apikey,
+          userId: String(user.id)
+        };
+        
+        // Добавляем задержку между запросами (например, 1 секунда)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const stockData = await this.getStock(headers);
+        const importAnalytics = typeof stockData === "string" 
+          ? stockData 
+          : await this.importStock(Number(headers.userId), stockData);
+        
+      } catch (error) {
+        if (error.response?.status === 429) {
+          
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue; 
+        }
+        console.error(`Error for user ${user.id}:`, error);
+      }
+    }
+  };
+
+  async fetchAndImportTransaction() {
+    const users = await this.user.getAllUsers();
+    
+    for (const user of users) {
+      try {
+        const clientId = await decrypt(user.clientId);
+        const apikey = await decrypt(user.apiKey);
+        
+        const headers: headerDTO = {
+          clientId: clientId,
+          apiKey: apikey,
+          userId: String(user.id)
+        };
+        
+        // Добавляем задержку между запросами (например, 1 секунда)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const transactionData = await this.getTransactions(headers);
+        this.logger.log(transactionData)
+        const importTransaction = typeof transactionData === "string" 
+          ? transactionData 
+          : await this.importTransaction(Number(headers.userId), transactionData);
+        
+      } catch (error) {
+        if (error.response?.status === 429) {
+          
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue; 
+        }
+        console.error(`Error for user ${user.id}:`, error);
+      }
+    }
+  };
+
+  async fetchAndImportProduct() {
+    const users = await this.user.getAllUsers();
+    
+    for (const user of users) {
+      try {
+        const clientId = await decrypt(user.clientId);
+        const apikey = await decrypt(user.apiKey);
+        
+        const headers: headerDTO = {
+          clientId: clientId,
+          apiKey: apikey,
+          userId: String(user.id)
+        };
+        
+        // Добавляем задержку между запросами (например, 1 секунда)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const productData = await this.getProduct(headers);
+        const importProdutc = typeof productData === "string" 
+          ? productData 
+          : await this.importProduct(Number(headers.userId), productData);
+        
+      } catch (error) {
+        if (error.response?.status === 429) {
+          
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue; 
+        }
+        console.error(`Error for user ${user.id}:`, error);
+      }
+    }
+  }
 
 
   async fetchAndImport() {
@@ -56,7 +191,7 @@ export class OzonSellerService {
 
   //_________________________________ANALYTICS_________________________________
   //-----------RESPONSE--------------
-  async getAnalyst(headers: headerDTO, @Req() req: Request): Promise<CreateAnalyticsDto[] | string> {
+  async getAnalyst(headers: headerDTO, @Req() req?: Request): Promise<CreateAnalyticsDto[] | string> {
     const { clientId, apiKey, userId } = headers;
   
     if (!clientId || !apiKey || !userId) {
@@ -81,9 +216,6 @@ export class OzonSellerService {
   
     try {
 
-      Logger.log("-------------------------------");
-      Logger.log("------ANALYTICS------");
-      Logger.log("Request data..");
 
       // Делаем параллельные запросы для всех групп метрик
       const requests = metricGroups.map(async metrics => {
@@ -125,8 +257,6 @@ export class OzonSellerService {
         return baseItem;
       });
   
-      Logger.log("Data received and merged.");
-      Logger.log("-------------------------------");
       
       return mergedData;
     } catch (error) {
@@ -137,6 +267,7 @@ export class OzonSellerService {
         code: '500',
         serviceName: "Seller/Analytics/Data/request"
       });
+      this.logger.error(error.message)
       return String(error.message);
     }
   }
@@ -148,19 +279,9 @@ export class OzonSellerService {
       return true;
     };
 
-    Logger.log("Start import..");
-
-    const data = analyticsData.map(item => ({ // добавляем userId
-      ...item,
-      userId
-    }));
-
     try {
-
-      await this.repAnalyt.createMany(data);  // вызываем метод репозитория, что пренадлежит аналитике
-
-      Logger.log("Import success");
-      Logger.log("-------------------------------");
+      await this.repAnalyt.upsertManyAnalytics(analyticsData, userId);  
+      
 
     } catch (error) {
       await this.erorrs.logError(
@@ -172,6 +293,7 @@ export class OzonSellerService {
           serviceName: "Seller/Analytics/Data/import"
         }
       );
+      this.logger.error(error.message)
       return (`Failed to import analytics data: ${error.message}`);
     }
   }
@@ -181,8 +303,8 @@ export class OzonSellerService {
   //------RESPONSE-------
     async getStock(
       headers: headerDTO,
-      @Req() req: Request,
-      @Res() res: Response
+      @Req() req?: Request,
+      @Res() res?: Response
     ): Promise<CreateStockDto[] | Promise<string>> {
       const {clientId, apiKey, userId} = headers;
       const url = 'https://api-seller.ozon.ru/v2/analytics/stock_on_warehouses';
@@ -191,7 +313,7 @@ export class OzonSellerService {
         await this.erorrs.logUnauthorizedError(Number(userId));
         return (`Getting stock data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);
       };
-      const {limit, offset, warehouse_type} = req.body || {};
+      const {limit, offset, warehouse_type} = req?.body || {};
       
       const body: stockDTO = {
         "limit": limit || 1000,
@@ -206,14 +328,10 @@ export class OzonSellerService {
       };
 
       try {
-        Logger.log("-------------------------------");
-        Logger.log("------STOCK------");
-        Logger.log("Request data..");
         const response = await axios.post(url, body, { headers: httpHeader });
-        Logger.log("Data received.");
-        Logger.log("Start data conversion..");
+
         const result = response.data?.result.rows;
-        Logger.log("Data converted");
+
 
         return result;
       } catch (error) {
@@ -238,19 +356,12 @@ export class OzonSellerService {
       return true;
     }
 
-    Logger.log("Start import..")
 
-    const data = stockData.map(item => ({
-      ...item,
-      userId
-    }));
 
     try {
 
-      await this.repStock.createMany(data)
+      await this.repStock.upsertManyStock(stockData, userId)
 
-      Logger.log("Import success");
-      Logger.log("-------------------------------")
 
     } catch (error) {
 
@@ -279,16 +390,19 @@ export class OzonSellerService {
   //--------RESPONSE--------
   async getTransactions(
     headers: headerDTO,
-    @Req() req: Request,
-    @Res() res: Response
+    @Req() req?: Request,
+    @Res() res?: Response
   ): Promise<CreateTransactionDto[] | Promise<string>> {
     const url = 'https://api-seller.ozon.ru/v3/finance/transaction/list';
-    const {operation_type, posting_number, transaction_type, page, page_size} = req.body || {};
-    const {dateto, datefrom} = req.body?.filter.date || {};
+    const {operation_type, posting_number, transaction_type, page, page_size} = req?.body || {};
+    
+    const {dateto, datefrom} = req?.body?.filter.date || {};
     const {clientId, apiKey, userId} = headers;
-
+    this.logger.log(clientId)
+    this.logger.log(apiKey)
     if (!clientId || !apiKey || !userId) {
       await this.erorrs.logUnauthorizedError(Number(userId));
+      this.logger.error(`Getting transaction data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`)
       return (`Getting transaction data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);;
     };
 
@@ -297,18 +411,18 @@ export class OzonSellerService {
     const date_to = dateto || dateNow.toISOString();
 
     const body: transactionDTO = {
-      "filter": {
-        "date": {
-          "from": datefrom || date_from,
-          "to": dateto || date_to
+      filter: {
+        date: {
+          from: datefrom || new Date(subMonths(new Date(), 1)).toISOString(),
+          to: dateto || new Date().toISOString()
         },
-        "operation_type": operation_type || [],
-        "posting_number": posting_number || "",
-        "transaction_type": transaction_type || "all"
+        operation_type: operation_type || [],
+        posting_number: posting_number || "", 
+        transaction_type: transaction_type || "all"
       },
-      "page": page || 1,
-      "page_size": page_size || 1000
-    }
+      page: page || 1,
+      page_size: page_size || 1000
+    };
     
     const httpHeader = {
       'Client-Id': clientId,
@@ -317,12 +431,7 @@ export class OzonSellerService {
     };
 
     try {
-      Logger.log("-------------------------------")
-      Logger.log("------TRANSACTION------")
-      Logger.log("Request data..");
       const response = await axios.post(url, body, { headers: httpHeader });
-      Logger.log("Data received.");
-      Logger.log("Start data conversion..");
 
       const page = response.data.result.page_count;
       let data = response.data.result.operations;
@@ -365,6 +474,7 @@ export class OzonSellerService {
           serviceName: "Seller/Transactions/request"
         }
       );
+      this.logger.error(error.message)
       return String(error.message);
     };
   };
@@ -375,20 +485,11 @@ export class OzonSellerService {
       Logger.log("No new data to import. Data is up-to-date.");
       return true;
     }
-
-    const data = transactionData.map(item => ({
-      ...item,
-      userId
-    }));
-
-    Logger.log("Start import..");
+    
 
     try {
-
-      await this.repTrans.createMany(data);
+      await this.repTrans.upsertManyTransaction(transactionData, userId);
       
-      Logger.log("Import Success");
-      Logger.log("-------------------------------")
 
     } catch (error) {
 
@@ -421,8 +522,8 @@ export class OzonSellerService {
   //-------RESPONSE-------
   async getProduct(
     headers: headerDTO,
-    @Req() req: Request,
-    @Res() res: Response
+    @Req() req?: Request,
+    @Res() res?: Response
   ): Promise<CreateProductDto[] | Promise<string>> {
     const {clientId, apiKey, userId} = headers;
     
@@ -431,7 +532,7 @@ export class OzonSellerService {
       return (`Getting products data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`);
     };
     const url = 'https://api-seller.ozon.ru/v3/product/list';
-    const {offer_id, product_id, visibility, last_id, limit} = req.body || {};
+    const {offer_id, product_id, visibility, last_id, limit} = req?.body || {};
 
     const body: productListDTO = {
       "filter": {
@@ -450,14 +551,9 @@ export class OzonSellerService {
     };
 
     try {
-      Logger.log("-------------------------------");
-      Logger.log("------Product------");
-      Logger.log("Request data..");
 
       const response = await axios.post(url, body, { headers: httpHeader });
 
-      Logger.log("Data received.");
-      Logger.log("Start data conversion..");
 
       const last_id = response.data.result.last_id;
       let productData: CreateProductDto[] = response.data.result.items.map(item => ({
@@ -482,8 +578,6 @@ export class OzonSellerService {
         item.quants = JSON.stringify(quants);
       };
 
-      Logger.log("Data converted.");
-      Logger.log("-------------------------------")
 
       return productData;
 
@@ -509,19 +603,16 @@ export class OzonSellerService {
       return true;
     };
 
-    const data = productData.map(item => ({
-      ...item,
-      userId
-    }));
+    // const data = productData.map(item => ({
+    //   ...item,
+    //   userId
+    // }));
 
-    Logger.log("Start import..");
 
     try {
 
-      await this.repProduct.createMany(data);
+      await this.repProduct.upsertManyProduct(productData, userId);
       
-      Logger.log("Import Success");
-      Logger.log("-------------------------------")
 
     } catch (error) {
 
@@ -560,15 +651,15 @@ export class OzonSellerService {
       const transactionData = await this.getTransactions(headers, req as Request, res as Response);
       const productData = await this.getProduct(headers, req as Request, res as Response);
 
-      const filteredAnalyticsData = typeof analyticsData === "string"? analyticsData : await this.duplicateChecker.checkAndFilterDuplicates('analytics', analyticsData, ['dimensions', 'date_from', 'date_to']);
-      const filteredStockData = typeof stockData === "string"? stockData : await this.duplicateChecker.checkAndFilterDuplicates('stock', stockData, ['sku', 'warehouse_name']);
-      const filteredTransactionData = typeof transactionData === "string"? transactionData : await this.duplicateChecker.checkAndFilterDuplicates('transactions', transactionData, ['operation_id']);
-      const filteredProductData = typeof productData === "string"? productData : await this.duplicateChecker.checkAndFilterDuplicates('products', productData, ['product_id']);
+      const filteredAnalyticsData = typeof analyticsData === "string"? analyticsData : await this.duplicateChecker.checkAndFilterDuplicates('analytics', analyticsData, ['dimensions', 'userId', 'date_from', 'date_to']);
+      const filteredStockData = typeof stockData === "string"? stockData : await this.duplicateChecker.checkAndFilterDuplicates('stock', stockData, ['sku', 'userId', 'warehouse_name']);
+      const filteredTransactionData = typeof transactionData === "string"? transactionData : await this.duplicateChecker.checkAndFilterDuplicates('transactions', transactionData, ['operation_id', 'userId',]);
+      const filteredProductData = typeof productData === "string"? productData : await this.duplicateChecker.checkAndFilterDuplicates('products', productData, ['product_id', 'userId',]);
 
-      const importAnalytics = typeof filteredAnalyticsData === "string"? filteredAnalyticsData : await this.importAnalytics(Number(headers.userId), filteredAnalyticsData)
-      const importStock = typeof filteredStockData === "string"? filteredStockData : await this.importStock(Number(headers.userId), filteredStockData);
-      const importTransaction = typeof filteredTransactionData === "string"? filteredTransactionData : await this.importTransaction(Number(headers.userId), filteredTransactionData);
-      const importProduct = typeof filteredProductData === "string"? filteredProductData : await this.importProduct(Number(headers.userId), filteredProductData);
+      const importAnalytics = typeof analyticsData === "string"? analyticsData : await this.importAnalytics(Number(headers.userId), analyticsData)
+      const importStock = typeof stockData === "string"? stockData : await this.importStock(Number(headers.userId), stockData);
+      const importTransaction = typeof transactionData === "string"? transactionData : await this.importTransaction(Number(headers.userId), transactionData);
+      const importProduct = typeof productData === "string"? productData : await this.importProduct(Number(headers.userId), productData);
 
       if (importAnalytics === true && importStock === true && importTransaction === true && importProduct === true) {
 
@@ -577,16 +668,16 @@ export class OzonSellerService {
       } else {
 
         Logger.log(`Import status:`);
-        Logger.log(`--> Analytics: ${typeof importAnalytics === "boolean"? importAnalytics : false}`);        // req      analytics
+        Logger.log(`--> Analytics: ${typeof importAnalytics === "boolean"? importAnalytics : false}`);          // req      analytics
         Logger.log(`----> Errors: ${typeof importAnalytics === "string"?  importAnalytics : 'none'}`);          // errors   analytics
 
-        Logger.log(`--> Stock_WareHouse: ${typeof importStock === "boolean"? importStock : false}`)           // req      stock
+        Logger.log(`--> Stock_WareHouse: ${typeof importStock === "boolean"? importStock : false}`)             // req      stock
         Logger.log(`----> Errors: ${typeof importStock === "string"? importStock : 'none'}`);                   // errors   stock
 
-        Logger.log(`--> Transactions: ${typeof importTransaction === "boolean"? importTransaction : false}`); // req      transactions
+        Logger.log(`--> Transactions: ${typeof importTransaction === "boolean"? importTransaction : false}`);   // req      transactions
         Logger.log(`----> Errors: ${typeof importTransaction === "string"? importTransaction : 'none'}`);       // errors   transactions
         
-        Logger.log(`--> Products: ${typeof importProduct === "boolean"? importProduct : false}`);             // req      product
+        Logger.log(`--> Products: ${typeof importProduct === "boolean"? importProduct : false}`);               // req      product
         Logger.log(`----> Errors: ${typeof importProduct === "string"? importProduct : 'none'}`);               // errors   product
 
         return false;

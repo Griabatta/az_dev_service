@@ -23,9 +23,9 @@ export interface stockDTO {
         from: string,
         to: string
       },
-      operation_type?: string[],
+      operation_type: string[],
       posting_number: string,
-      transaction_type?: string
+      transaction_type: string
     },
     page: number,
     page_size: number

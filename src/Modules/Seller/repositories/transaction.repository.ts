@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { formatISO, isValid, startOfDay } from 'date-fns';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
 
 @Injectable()
@@ -11,7 +12,46 @@ export class TransactionRepository {
   }
 
   async createMany(data: Prisma.Transaction_ListCreateManyInput[]) {
-    return this.prisma.transaction_List.createMany({ data });
+    return this.prisma.transaction_List.createMany({
+      data,
+      skipDuplicates: true
+    });
+  };
+
+  async upsertManyTransaction(data: any[], userId: number) {
+    return await this.prisma.$transaction(
+      data.map(item => {
+        
+        const rawDate = item.date ? new Date(item.date) : new Date();
+        
+        if (!isValid(rawDate)) {
+          throw new Error(`Invalid date format: ${item.date}`);
+        }
+        
+        const dateAtStartOfDay = startOfDay(rawDate);
+        return this.prisma.transaction_List.upsert({
+          where: {
+            transaction_user_date_operId: {
+              userId,
+              operation_id: item.operation_id,
+              createAt: dateAtStartOfDay
+            }
+          },
+          create: {
+            userId,
+            createAt: dateAtStartOfDay,
+            operation_id: item.operation_id,
+            ...item
+          },
+          update: {
+            operation_date: item.operation_id,
+            createAt: item.createAt,
+            userId: item.userId,
+            ...item
+          }
+        });
+      })
+    );
   }
 
   async findById(id: number) {

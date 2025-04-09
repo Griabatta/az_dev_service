@@ -1,12 +1,11 @@
 /*
   Warnings:
 
-  - A unique constraint covering the columns `[campaignId,userId]` on the table `CampaignItem` will be added. If there are existing duplicate values, this will fail.
+  - The primary key for the `ProductReview` table will be changed. If it partially fails, the table could be left without primary key constraint.
+  - The `id` column on the `ProductReview` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - Added the required column `reviewId` to the `ProductReview` table without a default value. This is not possible if the table is not empty.
 
 */
--- DropIndex
-DROP INDEX "CampaignItem_campaignId_userId_createdAt_key";
-
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
@@ -14,9 +13,6 @@ ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "Bundle" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
-
--- AlterTable
-ALTER TABLE "CampaignItem" ALTER COLUMN "createdAtDB" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
 ALTER TABLE "CampaignTemplate" ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp,
@@ -29,6 +25,13 @@ ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "PerformanceToken" ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp;
+
+-- AlterTable
+ALTER TABLE "ProductReview" DROP CONSTRAINT "ProductReview_pkey",
+ADD COLUMN     "reviewId" TEXT NOT NULL,
+DROP COLUMN "id",
+ADD COLUMN     "id" SERIAL NOT NULL,
+ADD CONSTRAINT "ProductReview_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
 ALTER TABLE "Product_List" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
@@ -49,6 +52,3 @@ ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "User" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
-
--- CreateIndex
-CREATE UNIQUE INDEX "CampaignItem_campaignId_userId_key" ON "CampaignItem"("campaignId", "userId");

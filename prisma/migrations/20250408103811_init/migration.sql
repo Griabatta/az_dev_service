@@ -200,7 +200,7 @@ CREATE TABLE "CampaignItem" (
     "modelsMoney" TEXT,
     "drr" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAtDB" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
+    "createdAtDB" TEXT NOT NULL,
     "campaignId" TEXT NOT NULL,
     "userId" INTEGER NOT NULL,
     "type" TEXT NOT NULL,
@@ -252,12 +252,6 @@ CREATE UNIQUE INDEX "Bundle_campaigns_key" ON "Bundle"("campaigns");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Bundle_reportsId_key" ON "Bundle"("reportsId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "CampaignItem_campaignId_key" ON "CampaignItem"("campaignId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "CampaignItem_campaignId_userId_createdAt_key" ON "CampaignItem"("campaignId", "userId", "createdAt");
 
 -- AddForeignKey
 ALTER TABLE "CampaignTemplate" ADD CONSTRAINT "CampaignTemplate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

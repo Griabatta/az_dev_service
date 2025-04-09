@@ -1,6 +1,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { formatISO, isValid, startOfDay } from 'date-fns';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
 
 @Injectable()
@@ -14,9 +15,45 @@ export class AnalyticsRepository {
     });
   }
 
+  async upsertManyAnalytics(data: any[], userId: number) {
+    return await this.prisma.$transaction(
+      data.map(item => {
+        // 1. Получаем дату из item.date или используем текущую дату
+        const rawDate = item.date ? new Date(item.date) : new Date();
+        
+        // 2. Проверяем валидность даты
+        if (!isValid(rawDate)) {
+          throw new Error(`Invalid date format: ${item.date}`);
+        }
+        
+        const dateAtStartOfDay = startOfDay(rawDate);
+  
+        return this.prisma.analytics.upsert({
+          where: {
+            analytics_user_dimensions_date: {
+              userId,
+              dimensionsId: item.dimensionsId,
+              createAt: dateAtStartOfDay
+            }
+          },
+          create: {
+            userId,
+            ...item,
+            createAt: dateAtStartOfDay
+          },
+          update: {
+            revenue: item.revenue,
+            ...item
+          }
+        });
+      })
+    );
+  }
+
   async createMany(data: Prisma.AnalyticsCreateManyInput[]) {
     return this.prisma.analytics.createMany({
-        data
+        data,
+        skipDuplicates: true
     })
   }
 

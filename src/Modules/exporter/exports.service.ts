@@ -39,67 +39,67 @@ export class GoogleSheetsService {
   }
 
   // GET ALL DATA for seller
-  async getDatabyDB(userId: number) {
+  // async getDatabyDB(userId: number) {
     
-    const userWithAllData = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        analytics: true,
-        stock_warehouse: true,
-        transactions: true,
-        product: true,
-        performanceToken: true
-      }
-    });
+  //   const userWithAllData = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //     include: {
+  //       analytics: true,
+  //       stock_warehouse: true,
+  //       transactions: true,
+  //       product: true,
+  //       performanceToken: true
+  //     }
+  //   });
   
-    if (!userWithAllData) {
-      this.logger.error('User not found');
-    }
+  //   if (!userWithAllData) {
+  //     this.logger.error('User not found');
+  //   }
   
-    const exportData = {
-      userInfo: {
-        id: userWithAllData?.id,
-        email: userWithAllData?.email,
-        name: userWithAllData?.name,
-        tableSheetId: userWithAllData?.tableSheetId
-      },
-      analytics: userWithAllData?.analytics,
-      stock: userWithAllData?.stock_warehouse,
-      transactions: userWithAllData?.transactions,
-      products: userWithAllData?.product,
-      performanceTokens: userWithAllData?.performanceToken
-    };
+  //   const exportData = {
+  //     userInfo: {
+  //       id: userWithAllData?.id,
+  //       email: userWithAllData?.email,
+  //       name: userWithAllData?.name,
+  //       tableSheetId: userWithAllData?.tableSheetId
+  //     },
+  //     analytics: userWithAllData?.analytics,
+  //     stock: userWithAllData?.stock_warehouse,
+  //     transactions: userWithAllData?.transactions,
+  //     products: userWithAllData?.product,
+  //     performanceTokens: userWithAllData?.performanceToken
+  //   };
     
-    return exportData;
-  }
+  //   return exportData;
+  // }
  
-  async ensureSheetExists(sheetName: string, hidden = false) {
-    return this.createSheetIfNotExists(sheetName, hidden);
+  async ensureSheetExists(sheetName: string, hidden = false, tableId: string) {
+    return this.createSheetIfNotExists(sheetName, hidden, tableId);
   };
 
-  async appendData(sheetName: string, values: any[][], startCell = 'A1') {
-    await this.ensureSheetExists(sheetName);
-    const range = `${sheetName}!${startCell}`;
+  // async appendData(sheetName: string, values: any[][], startCell = 'A1', tableId: string) {
+  //   await this.ensureSheetExists(sheetName);
+  //   const range = `${sheetName}!${startCell}`;
     
-    const spreadsheetId = this.configService.get('GOOGLE_SHEETS_SPREADSHEET_ID');
-    const authClient = await this.auth.getClient();
+  //   const spreadsheetId = tableId;
+  //   const authClient = await this.auth.getClient();
 
-    const request = {
-      spreadsheetId,
-      range,
-      valueInputOption: 'USER_ENTERED',
-      insertDataOption: 'INSERT_ROWS',
-      resource: { values },
-      auth: authClient,
-    };
+  //   const request = {
+  //     spreadsheetId,
+  //     range,
+  //     valueInputOption: 'USER_ENTERED',
+  //     insertDataOption: 'INSERT_ROWS',
+  //     resource: { values },
+  //     auth: authClient,
+  //   };
 
-    const response = await this.sheets.spreadsheets.values.append(request);
-    return response.data;
-  }
+  //   const response = await this.sheets.spreadsheets.values.append(request);
+  //   return response.data;
+  // }
 
 
-  private async createSheetIfNotExists(sheetName: string, hidden = false) {
-    const spreadsheetId = this.configService.get('GOOGLE_SHEETS_SPREADSHEET_ID');
+  private async createSheetIfNotExists(sheetName: string, hidden = false, tableId: string) {
+    const spreadsheetId = tableId;
     const authClient = await this.auth.getClient();
 
     const spreadsheet = await this.sheets.spreadsheets.get({
@@ -135,26 +135,25 @@ export class GoogleSheetsService {
     }
   }
 
-  async sheetExists(sheetName: string): Promise<boolean> {
-    const spreadsheetId = this.configService.get('GOOGLE_SHEETS_SPREADSHEET_ID');
-    const authClient = await this.auth.getClient();
+  // async sheetExists(sheetName: string): Promise<boolean> {
+  //   const spreadsheetId = this.configService.get('GOOGLE_SHEETS_SPREADSHEET_ID');
+  //   const authClient = await this.auth.getClient();
   
-    const spreadsheet = await this.sheets.spreadsheets.get({
-      spreadsheetId,
-      auth: authClient,
-    });
+  //   const spreadsheet = await this.sheets.spreadsheets.get({
+  //     spreadsheetId,
+  //     auth: authClient,
+  //   });
   
-    return spreadsheet.data.sheets?.some(
-      sheet => sheet.properties?.title === sheetName
-    ) ?? false;
-  }
+  //   return spreadsheet.data.sheets?.some(
+  //     sheet => sheet.properties?.title === sheetName
+  //   ) ?? false;
+  // }
 
-  async overwriteSheet(sheetName: string, values: any[][]) {
-    await this.ensureSheetExists(sheetName);
+  async overwriteSheet(sheetName: string, values: any[][], tableId: string) {
+    await this.ensureSheetExists(sheetName, false, tableId);
     const range = `${sheetName}!A1`;
-
     
-    const spreadsheetId = this.configService.get('GOOGLE_SHEETS_SPREADSHEET_ID');
+    const spreadsheetId = tableId;
     const authClient = await this.auth.getClient();
   
     // Сначала очищаем лист
@@ -282,15 +281,15 @@ export class GoogleSheetsService {
     }
   };
   
-  async exportData(params: { 
-    sheetName: string; 
-    data: any[][];
-    hidden?: boolean;
-  }) {
+  // async exportData(params: { 
+  //   sheetName: string; 
+  //   data: any[][];
+  //   hidden?: boolean;
+  // }, tableId: string) {
 
-    await this.ensureSheetExists(params.sheetName, params.hidden ?? false);
-    return this.appendData(params.sheetName, params.data);
-  }
+  //   await this.ensureSheetExists(params.sheetName, params.hidden ?? false);
+  //   return this.appendData(params.sheetName, params.data, undefined, tableId);
+  // }
 
   async ExportInSheet(type: string) {
     
@@ -302,7 +301,7 @@ export class GoogleSheetsService {
     users.map(async user => {
         try {
           const data = await this.getDataForExportByNameRequest(type, user.id);
-          
+
           if (data?.length == 0) {
             await this.error.logError({
               userId: user.id,
@@ -316,10 +315,10 @@ export class GoogleSheetsService {
 
           const validForm = await this.setValidFormForSheet(data || [], String(type));
           
-
-          Logger.log(`Data exported. For User ${user.email}`);
+          await this.overwriteSheet(SheetName(type), validForm || [], user.tableSheetId);
           
-          await this.overwriteSheet(SheetName(type), validForm || []);
+          Logger.log(`Data exported. For User ${user.email}`);
+
         } catch (e) {
           Logger.log("Data not exported.");
           await this.error.logError({

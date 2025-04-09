@@ -12,6 +12,7 @@ import { UserModule } from '../Auth/user.module';
 import { JournalErrorsModule } from '../Errors/errors.module';
 import { PerformanceModule } from '../performance/performance.module';
 import { GoogleSheetsModule } from '../exporter/exports.module';
+import { ReviewService } from './ozon_review.service';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { GoogleSheetsModule } from '../exporter/exports.module';
     AnalyticsRepository,
     TransactionRepository,
     ProductRepository,
+    ReviewService
   ],
-  exports: [StockRepository, AnalyticsRepository, TransactionRepository, ProductRepository, OzonSellerService]
+  exports: [StockRepository, AnalyticsRepository, TransactionRepository, ProductRepository, OzonSellerService, ReviewService]
 })
 export class SellerModule {}

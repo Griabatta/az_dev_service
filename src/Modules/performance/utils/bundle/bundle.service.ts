@@ -30,7 +30,7 @@ export class BundleService {
             }
           },
           campaigns: chunk,
-          type: `${campaignsData[i].advObjectType}`,
+          type: `${campaignsData[i]?.advObjectType}`,
           status: "Registered"
         }
         await this.bundleRep.createBundle(data);

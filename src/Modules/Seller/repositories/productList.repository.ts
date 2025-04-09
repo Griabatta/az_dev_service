@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { formatISO, isValid, startOfDay } from 'date-fns';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
 
 @Injectable()
@@ -11,7 +12,51 @@ export class ProductRepository {
   }
 
   async createMany(data: Prisma.Product_ListCreateManyInput[]) {
-    return this.prisma.product_List.createMany({ data });
+    return this.prisma.product_List.createMany({
+      data,
+      skipDuplicates: true
+    });
+  };
+
+  async upsertManyProduct(data: any[], userId: number) {
+      return await this.prisma.$transaction(
+        data.map(item => {
+          
+          const rawDate = item.date ? new Date(item.date) : new Date();
+          
+          if (!isValid(rawDate)) {
+            throw new Error(`Invalid date format: ${item.date}`);
+          }
+          
+          const dateAtStartOfDay = startOfDay(rawDate);
+    
+          return this.prisma.product_List.upsert({
+            where: {
+              product_user_offer_date: {
+                userId,
+                offer_id: item.offer_id,
+                createAt: dateAtStartOfDay
+              }
+            },
+            create: {
+              userId,
+              offer_id: item.offer_id,
+              createAt: dateAtStartOfDay,
+              has_fbo_stocks: item.has_fbo_stocks,
+              has_fbs_stocks: item.has_fbs_stocks,
+              is_discounted: item.is_discounted,
+              quants: item.quants,
+              archived: item.archived,
+              product_id: item.product_id
+            },
+            update: {
+              offer_id: item.offer_id,
+              createAt: item.createAt,
+              ...item
+            }
+          });
+        })
+      );
   }
 
   async findById(id: number) {

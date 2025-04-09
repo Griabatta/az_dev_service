@@ -11,6 +11,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 
@@ -42,6 +43,7 @@ model User {
   reports            Reports[]
   bundle             Bundle[]       
   camaignItem        CampaignItem[]    
+  reviews            ProductReview[]
 }
 
 model CampaignTemplate {
@@ -91,8 +93,11 @@ model Analytics {
   userId              Int
   user                User   @relation(fields: [userId], references: [id])
   
+  
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))   
+
+  @@unique([userId, dimensionsId, createAt], name: "analytics_user_dimensions_date")
 }
 
 model Stock_Warehouse {
@@ -112,6 +117,8 @@ model Stock_Warehouse {
   
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+
+   @@unique([userId, sku, warehouse_name, createAt], name: "stock_user_sku_stock_date")
 }
  
 
@@ -119,7 +126,7 @@ model Stock_Warehouse {
 model Transaction_List {
   id                      Int     @id @default(autoincrement()) 
 
-  operation_id            String
+  operation_id            String  @unique
   operation_type          String
   operation_date          String
   operation_type_name     String
@@ -141,6 +148,8 @@ model Transaction_List {
   
   createAt                DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt                DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+
+  @@unique([userId, operation_id, createAt], name: "transaction_user_date_operId")
 }
 
 
@@ -154,13 +163,16 @@ model Product_List {
   has_fbo_stocks      Boolean
   has_fbs_stocks      Boolean
   is_discounted       Boolean
-  offer_id            String
+  offer_id            String    @unique
   product_id          String
   // quants
   quants              String?
 
+
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+
+   @@unique([userId, offer_id, createAt], name: "product_user_offer_date")
 }
 
 
@@ -244,4 +256,47 @@ model CampaignItem {
   userId      Int       
   user        User   @relation(fields: [userId], references: [id])
   type        String
+}
+
+model ProductReview {
+  id                 Int      @id @default(autoincrement())
+  reviewId           String   @unique
+  comments_amount    Int      @default(0)
+  dislikes_amount    Int      @default(0)
+  is_rating_participant Boolean @default(false)
+  likes_amount       Int      @default(0)
+  order_status       String
+  photos             String   @default("[]")
+  photos_amount      Int      @default(0)
+  published_at       DateTime
+  rating             Int      @default(0)
+  sku                Int
+  status             String
+  text               String?
+  videos             String   @default("[]")
+  videos_amount      Int      @default(0)
+
+  userId             Int
+  user               User     @relation(fields: [userId], references: [id])
+
+  createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  
+  @@unique([userId, reviewId, createAt], name: "Review_user_review_date")
+}
+
+model Task {
+  id          String      @id @default(uuid())
+  type        String
+  serviceName String
+  status      String      @default("PENDING")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  metadata    Json?
+
+
+
+  @@index([type])
+  @@index([serviceName])
+  @@index([status])
 }

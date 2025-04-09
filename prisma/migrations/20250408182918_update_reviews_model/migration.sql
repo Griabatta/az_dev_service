@@ -19,6 +19,11 @@ ALTER TABLE "PerformanceToken" ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DAT
 ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
+ALTER TABLE "ProductReview" ADD COLUMN     "avgRating" DOUBLE PRECISION DEFAULT 0,
+ADD COLUMN     "reviewCount" INTEGER DEFAULT 0,
+ADD COLUMN     "rewardedReviewCount" INTEGER DEFAULT 0;
+
+-- AlterTable
 ALTER TABLE "Product_List" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
