@@ -208,6 +208,43 @@ CREATE TABLE "CampaignItem" (
     CONSTRAINT "CampaignItem_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "ProductReview" (
+    "id" SERIAL NOT NULL,
+    "reviewId" TEXT NOT NULL,
+    "comments_amount" INTEGER NOT NULL,
+    "is_rating_participant" BOOLEAN NOT NULL,
+    "order_status" TEXT NOT NULL,
+    "photos_amount" INTEGER NOT NULL,
+    "published_at" TEXT NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "offerId" TEXT NOT NULL,
+    "sku" TEXT NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "videos_amount" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
+    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
+
+    CONSTRAINT "ProductReview_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Task" (
+    "id" SERIAL NOT NULL,
+    "type" TEXT NOT NULL,
+    "serviceName" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "metadata" JSONB,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "Task_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_clientId_key" ON "User"("clientId");
 
@@ -236,6 +273,24 @@ CREATE UNIQUE INDEX "User_performanceTokenId_key" ON "User"("performanceTokenId"
 CREATE UNIQUE INDEX "CampaignTemplate_campaignId_key" ON "CampaignTemplate"("campaignId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Analytics_userId_dimensionsId_createAt_key" ON "Analytics"("userId", "dimensionsId", "createAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Stock_Warehouse_userId_sku_warehouse_name_createAt_key" ON "Stock_Warehouse"("userId", "sku", "warehouse_name", "createAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Transaction_List_operation_id_key" ON "Transaction_List"("operation_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Transaction_List_userId_operation_id_createAt_key" ON "Transaction_List"("userId", "operation_id", "createAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Product_List_offer_id_key" ON "Product_List"("offer_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Product_List_userId_offer_id_createAt_key" ON "Product_List"("userId", "offer_id", "createAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PerformanceToken_token_key" ON "PerformanceToken"("token");
 
 -- CreateIndex
@@ -252,6 +307,18 @@ CREATE UNIQUE INDEX "Bundle_campaigns_key" ON "Bundle"("campaigns");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Bundle_reportsId_key" ON "Bundle"("reportsId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductReview_userId_reviewId_published_at_key" ON "ProductReview"("userId", "reviewId", "published_at");
+
+-- CreateIndex
+CREATE INDEX "Task_type_idx" ON "Task"("type");
+
+-- CreateIndex
+CREATE INDEX "Task_serviceName_idx" ON "Task"("serviceName");
+
+-- CreateIndex
+CREATE INDEX "Task_status_idx" ON "Task"("status");
 
 -- AddForeignKey
 ALTER TABLE "CampaignTemplate" ADD CONSTRAINT "CampaignTemplate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -282,3 +349,9 @@ ALTER TABLE "Bundle" ADD CONSTRAINT "Bundle_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "CampaignItem" ADD CONSTRAINT "CampaignItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductReview" ADD CONSTRAINT "ProductReview_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Task" ADD CONSTRAINT "Task_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

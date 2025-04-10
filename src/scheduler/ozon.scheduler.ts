@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit, Res } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { GoogleSheetsService } from 'src/Modules/exporter/exports.service';
 import { OzonPerformanceService } from 'src/Modules/performance/ozon_performance.service';
+import { PrismaService } from 'src/Modules/Prisma/prisma.service';
 import { ReviewService } from 'src/Modules/Seller/ozon_review.service';
 import { OzonSellerService } from 'src/Modules/Seller/ozon_seller.service';
 
@@ -12,13 +13,17 @@ export class OzonScheduler implements OnModuleInit {
     private readonly sellerController: OzonSellerService,
     private readonly campaigns: OzonPerformanceService,
     private readonly exporter: GoogleSheetsService,
-    private readonly reviewService: ReviewService
+    private readonly reviewService: ReviewService,
+    private readonly prisma: PrismaService
   ) {}
 
   async onModuleInit() {
+    this.SendDataAnalytics();
+    this.SendDataStock();
+    this.SendDataTransaction();
+    this.SendDataProductList();
 
   }
-
   // @Cron(CronExpression.EVERY_2_HOURS)
   // async handleCron() {
   //   await this.sellerController.fetchAndImport();

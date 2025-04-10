@@ -310,17 +310,15 @@ export class GoogleSheetsService {
               code: "400",
               priority: 2
             })
-            this.logger.error("Bad request. No data.");
+            
           }
 
           const validForm = await this.setValidFormForSheet(data || [], String(type));
           
           await this.overwriteSheet(SheetName(type), validForm || [], user.tableSheetId);
           
-          Logger.log(`Data exported. For User ${user.email}`);
 
         } catch (e) {
-          Logger.log("Data not exported.");
           await this.error.logError({
             userId: user.id,
             message: "Failed to export data to table.",

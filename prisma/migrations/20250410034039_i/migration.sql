@@ -1,11 +1,12 @@
 /*
   Warnings:
 
-  - The primary key for the `ProductReview` table will be changed. If it partially fails, the table could be left without primary key constraint.
-  - The `id` column on the `ProductReview` table would be dropped and recreated. This will lead to data loss if there is data in the column.
-  - Added the required column `reviewId` to the `ProductReview` table without a default value. This is not possible if the table is not empty.
+  - A unique constraint covering the columns `[userId,operation_id,createAt]` on the table `Transaction_List` will be added. If there are existing duplicate values, this will fail.
 
 */
+-- DropIndex
+DROP INDEX "Transaction_List_operation_id_createAt_key";
+
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
@@ -27,11 +28,8 @@ ALTER TABLE "PerformanceToken" ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DAT
 ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
-ALTER TABLE "ProductReview" DROP CONSTRAINT "ProductReview_pkey",
-ADD COLUMN     "reviewId" TEXT NOT NULL,
-DROP COLUMN "id",
-ADD COLUMN     "id" SERIAL NOT NULL,
-ADD CONSTRAINT "ProductReview_pkey" PRIMARY KEY ("id");
+ALTER TABLE "ProductReview" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
+ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
 ALTER TABLE "Product_List" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
@@ -52,3 +50,6 @@ ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "User" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Transaction_List_userId_operation_id_createAt_key" ON "Transaction_List"("userId", "operation_id", "createAt");

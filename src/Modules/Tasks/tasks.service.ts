@@ -1,6 +1,5 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { PrismaService } from "../Prisma/prisma.service";
-import { Cron, CronExpression } from "@nestjs/schedule";
 import { OzonSellerService } from "../Seller/ozon_seller.service";
 import { ReviewService } from "../Seller/ozon_review.service";
 
@@ -12,13 +11,13 @@ export class TaskService {
   constructor (
     private readonly prisma: PrismaService,
     private readonly seller: OzonSellerService,
-    private readonly review: ReviewService
+    // private readonly review: ReviewService
   ) {}
 
-  // Создание задачи
   async createTask(
     type: string,
     serviceName: string,
+    userId: number,
     metadata?: any
   ) {
     return await this.prisma.task.create({
@@ -26,21 +25,26 @@ export class TaskService {
         type,
         serviceName,
         status: 'PENDING',
-        metadata
+        metadata,
+        userId: userId
       }
     });
   }
 
-  // Обновление статуса задачи
-  async updateTaskStatus(taskId: string, status: string) {
+  async createManyTask(data: any) {
+    return await this.prisma.task.createMany({
+      data
+    });
+  }
+
+  async updateTaskStatus(taskId: number, status: string) {
     return await this.prisma.task.update({
       where: { id: taskId },
       data: { status }
     });
   }
 
-  // Завершение задачи
-  async completeTask(taskId: string, result?: any) {
+  async completeTask(taskId: number, result?: any) {
     return await this.prisma.task.update({
       where: { id: taskId },
       data: {
@@ -50,12 +54,7 @@ export class TaskService {
     });
   }
 
-  // 3. CRON задачи по типам
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async handleSellerTasks() {
-    this.logger.log('Running seller tasks check...');
-    await this.processTasksByType('SELLER');
-  }
+  
 
   // @Cron(CronExpression.EVERY_10_MINUTES)
   // async handlePerformanceTasks() {
@@ -63,92 +62,102 @@ export class TaskService {
   //   await this.processTasksByType('PERFORMANCE');
   // }
 
-  // 4. Основная логика обработки задач
-  private async processTasksByType(type: string) {
-    const pendingTasks = await this.prisma.task.findMany({
-      where: {
-        type,
-        status: 'PENDING'
-      },
-      take: 100
-    });
+  async processTasksByType(type: string) {
+    // const pendingTasks = await this.prisma.task.findMany({
+    //   where: {
+    //     type,
+    //     status: 'PENDING'
+    //   },
+    //   take: 100
+    // });
+    const users = await this.prisma.user.findMany();
+    users.map(async user => {
+      const tasks = await this.prisma.task.findMany({
+        where: {
+          userId: user.id,
+          status: 'PENDING',
+          type
+        },
+        take: 100
+      });
+      tasks.map(async task => {
+        try {
 
-    for (const task of pendingTasks) {
-      try {
-        // Помечаем задачу как "в процессе"
-        await this.updateTaskStatus(task.id, 'IN_PROGRESS');
+          await this.updateTaskStatus(task.id, 'IN_PROGRESS');
+  
+          const result = await this.processTask(task, user);
+  
+          await this.completeTask(task.id, result);
 
-        // Обработка в зависимости от сервиса
-        const result = await this.processTask(task);
+        } catch (error) {
 
-        // Помечаем как выполненную
-        await this.completeTask(task.id, result);
-      } catch (error) {
-        this.logger.error(`Task ${task.id} failed: ${error.message}`);
-        await this.prisma.task.update({
-          where: { id: task.id },
-          data: { status: 'FAILED' }
-        });
-      }
-    }
+          this.logger.error(`Task ${task.id} failed: ${error.message}`);
+
+          await this.prisma.task.update({
+            where: { id: task.id },
+            data: { status: 'FAILED' }
+          });
+        }
+      })
+    })
   }
 
-  // 5. Обработчики для разных сервисов
-  private async processTask(task: any) {
-    switch (task) {
+  private async processTask(task: any, user: any) {
+    switch (task.serviceName) {
       case 'analytics':
-        return this.handleAnalyticsSync(task);
+        return this.handleAnalyticsSync(task, user);
       case 'stock':
-        return this.handleStockSync(task);
-      case 'review':
-        return this.handleReviewSync(task);
+        return this.handleStockSync(task, user);
+      // case 'review':
+      //   return this.handleReviewSync(task, user);
       case 'product':
-        return this.handleProductSync(task);
-      // case 'transaction':
-      // return this.handleTransactionReport(task);
+        return this.handleProductSync(task, user);
+      case 'transaction':
+        return this.handleTransactionSync(task, user);
       default:
-        throw new Error(`Unknown service: ${task}`);
+        throw new Error(`Unknown service: ${task.serviceName}`);
     }
   }
 
-  // Пример обработчика для сервиса
-  private async handleAnalyticsSync(task: any) {
+  private async handleAnalyticsSync(task: any, user: any) {
     this.logger.log(`Processing product sync for task ${task.id}`);
-    await this.seller.fetchAndImportAnalytics();
+    await this.seller.fetchAndImportAnalytics(user);
     return { synced: true, count: 100 };
   }
 
-  private async handleStockSync(task: any) {
+  private async handleStockSync(task: any, user: any) {
     this.logger.log(`Processing product sync for task ${task.id}`);
-    await this.seller.fetchAndImportStock();
+    await this.seller.fetchAndImportStock(user);
     return { synced: true, count: 100 };
   }
 
-  private async handleReviewSync(task: any) {
+  private async handleTransactionSync(task: any, user: any) {
     this.logger.log(`Processing product sync for task ${task.id}`);
-    await this.review.fetchAndImportReviews();
+    await this.seller.fetchAndImportTransaction(user);
     return { synced: true, count: 100 };
   }
 
-  private async handleProductSync(task: any) {
+  // private async handleReviewSync(task: any, user: any) {
+  //   this.logger.log(`Processing product sync for task ${task.id}`);
+  //   await this.review.fetchAndImportReviews(user);
+  //   return { synced: true, count: 100 };
+  // }
+
+  private async handleProductSync(task: any, user: any) {
     this.logger.log(`Processing product sync for task ${task.id}`);
-    await this.seller.fetchAndImportProduct();
+    await this.seller.fetchAndImportProduct(user);
     return { synced: true, count: 100 };
   }
 
-  // 6. Метод для ручного запуска задач
   async triggerManualTask(type: string, serviceName: string, userId: number) {
-    const task = await this.createTask(type, serviceName);
+    const task = await this.createTask(type, serviceName, userId);
     await this.processTasksByType(type);
     return task;
   }
 
-  @Cron(CronExpression.EVERY_5_HOURS)
-  async createSellerTasks() {
-    await this.createTask("SELLER", "analytics")
-    await this.createTask("SELLER", "stock")
-    await this.createTask("SELLER", "review")
-    await this.createTask("SELLER", "product")
-  }
+
+
+
+ 
 
 }

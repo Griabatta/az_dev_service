@@ -8,6 +8,7 @@ import { UserModule } from './Modules/Auth/user.module';
 import { MPStatModule } from './Modules/mpstat/mpstat.module';
 import { PerformanceModule } from './Modules/performance/performance.module';
 import { PerformanceScheduleModule } from './Modules/performance/shedule/performance_shedule.module';
+import { TaskModule } from './Modules/Tasks/tasks.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { PerformanceScheduleModule } from './Modules/performance/shedule/perform
     PerformanceModule,
     MPStatModule,
     GoogleSheetsModule,
-    PerformanceScheduleModule
+    PerformanceScheduleModule,
+    TaskModule
   ],
   controllers: [],
   providers: [],

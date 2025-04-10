@@ -1,11 +1,18 @@
 /*
   Warnings:
 
-  - You are about to drop the column `avgRating` on the `ProductReview` table. All the data in the column will be lost.
-  - You are about to drop the column `reviewCount` on the `ProductReview` table. All the data in the column will be lost.
-  - You are about to drop the column `rewardedReviewCount` on the `ProductReview` table. All the data in the column will be lost.
+  - A unique constraint covering the columns `[operation_id,createAt]` on the table `Transaction_List` will be added. If there are existing duplicate values, this will fail.
 
 */
+-- DropIndex
+DROP INDEX "Product_List_offer_id_key";
+
+-- DropIndex
+DROP INDEX "Transaction_List_operation_id_idx";
+
+-- DropIndex
+DROP INDEX "Transaction_List_operation_id_key";
+
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
@@ -27,15 +34,11 @@ ALTER TABLE "PerformanceToken" ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DAT
 ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
-ALTER TABLE "ProductReview" DROP COLUMN "avgRating",
-DROP COLUMN "reviewCount",
-DROP COLUMN "rewardedReviewCount";
+ALTER TABLE "ProductReview" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
+ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
-ALTER TABLE "Product_List" ADD COLUMN     "avgRating" DOUBLE PRECISION DEFAULT 0,
-ADD COLUMN     "reviewCount" INTEGER DEFAULT 0,
-ADD COLUMN     "rewardedReviewCount" INTEGER DEFAULT 0,
-ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
+ALTER TABLE "Product_List" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
@@ -53,3 +56,6 @@ ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "User" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Transaction_List_operation_id_createAt_key" ON "Transaction_List"("operation_id", "createAt");

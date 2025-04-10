@@ -1,15 +1,5 @@
-/*
-  Warnings:
-
-  - A unique constraint covering the columns `[reviewId]` on the table `ProductReview` will be added. If there are existing duplicate values, this will fail.
-  - A unique constraint covering the columns `[userId,reviewId,createAt]` on the table `ProductReview` will be added. If there are existing duplicate values, this will fail.
-
-*/
 -- DropIndex
-DROP INDEX "ProductReview_published_at_idx";
-
--- DropIndex
-DROP INDEX "ProductReview_sku_idx";
+DROP INDEX "Transaction_List_userId_operation_id_createAt_key";
 
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
@@ -32,8 +22,8 @@ ALTER TABLE "PerformanceToken" ALTER COLUMN "updatedAt" SET DEFAULT (CURRENT_DAT
 ALTER COLUMN "createdAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
-ALTER TABLE "ProductReview" ADD COLUMN     "createAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
-ADD COLUMN     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp;
+ALTER TABLE "ProductReview" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
+ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- AlterTable
 ALTER TABLE "Product_List" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
@@ -56,7 +46,4 @@ ALTER TABLE "User" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductReview_reviewId_key" ON "ProductReview"("reviewId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ProductReview_userId_reviewId_createAt_key" ON "ProductReview"("userId", "reviewId", "createAt");
+CREATE INDEX "Transaction_List_operation_id_idx" ON "Transaction_List"("operation_id");

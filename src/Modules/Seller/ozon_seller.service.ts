@@ -30,138 +30,103 @@ export class OzonSellerService {
     private readonly erorrs: JournalErrorsService,
     private readonly user: UserService
   ) {}
-  async fetchAndImportAnalytics() {
+  async fetchAndImportAnalytics(user: any) {
     
-    const users = await this.user.getAllUsers();
-    
-    for (const user of users) {
-      try {
-        const clientId = await decrypt(user.clientId);
-        const apikey = await decrypt(user.apiKey);
-        
-        const headers: headerDTO = {
-          clientId: clientId,
-          apiKey: apikey,
-          userId: String(user.id)
-        };
-        
-        // Добавляем задержку между запросами (например, 1 секунда)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const analyticsData = await this.getAnalyst(headers);
-        const importAnalytics = typeof analyticsData === "string" 
-          ? analyticsData 
-          : await this.importAnalytics(Number(headers.userId), analyticsData);
-        
-      } catch (error) {
-        if (error.response?.status === 429) {
-          // Если получили 429, увеличиваем задержку
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue; // Попробуем снова
-        }
-        console.error(`Error for user ${user.id}:`, error);
-      }
+    try {
+      const clientId = await decrypt(user.clientId);
+      const apikey = await decrypt(user.apiKey);
+      
+      const headers: headerDTO = {
+        clientId: clientId,
+        apiKey: apikey,
+        userId: String(user.id)
+      };
+      
+      
+      const analyticsData = await this.getAnalyst(headers);
+      const importAnalytics = typeof analyticsData === "string" 
+        ? analyticsData 
+        : await this.importAnalytics(Number(headers.userId), analyticsData);
+      return true;
+    } catch (error) {
+      console.error(`Error for user ${user.id}:`, error);
+      return false;
     }
+    
   };
 
-  async fetchAndImportStock() {
-    const users = await this.user.getAllUsers();
-    
-    for (const user of users) {
-      try {
-        const clientId = await decrypt(user.clientId);
-        const apikey = await decrypt(user.apiKey);
-        
-        const headers: headerDTO = {
-          clientId: clientId,
-          apiKey: apikey,
-          userId: String(user.id)
-        };
-        
-        // Добавляем задержку между запросами (например, 1 секунда)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const stockData = await this.getStock(headers);
-        const importAnalytics = typeof stockData === "string" 
-          ? stockData 
-          : await this.importStock(Number(headers.userId), stockData);
-        
-      } catch (error) {
-        if (error.response?.status === 429) {
-          
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue; 
-        }
-        console.error(`Error for user ${user.id}:`, error);
-      }
+  async fetchAndImportStock(user: any) {
+
+    try {
+      const clientId = await decrypt(user.clientId);
+      const apikey = await decrypt(user.apiKey);
+      
+      const headers: headerDTO = {
+        clientId: clientId,
+        apiKey: apikey,
+        userId: String(user.id)
+      };
+      
+      
+      const stockData = await this.getStock(headers);
+      const importStock = typeof stockData === "string" 
+        ? stockData 
+        : await this.importStock(Number(headers.userId), stockData);
+      return true;
+    } catch (error) {
+      console.error(`Error for user ${user.id}:`, error);
+      return false;
     }
+    
   };
 
-  async fetchAndImportTransaction() {
-    const users = await this.user.getAllUsers();
-    
-    for (const user of users) {
-      try {
-        const clientId = await decrypt(user.clientId);
-        const apikey = await decrypt(user.apiKey);
+  async fetchAndImportTransaction(user: any) {
+
+    try {
+      const clientId = await decrypt(user.clientId);
+      const apikey = await decrypt(user.apiKey);
+      
+      const headers: headerDTO = {
+        clientId: clientId,
+        apiKey: apikey,
+        userId: String(user.id)
+      };
+      
+      const transactionData = await this.getTransactions(headers);
+      const importTransaction = typeof transactionData === "string" 
+        ? transactionData 
+        : await this.importTransaction(Number(headers.userId), transactionData);
         
-        const headers: headerDTO = {
-          clientId: clientId,
-          apiKey: apikey,
-          userId: String(user.id)
-        };
-        
-        // Добавляем задержку между запросами (например, 1 секунда)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const transactionData = await this.getTransactions(headers);
-        this.logger.log(transactionData)
-        const importTransaction = typeof transactionData === "string" 
-          ? transactionData 
-          : await this.importTransaction(Number(headers.userId), transactionData);
-        
-      } catch (error) {
-        if (error.response?.status === 429) {
-          
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue; 
-        }
-        console.error(`Error for user ${user.id}:`, error);
-      }
+      return true;
+    } catch (error) {
+      console.error(`Error for user ${user.id}:`, error);
+      return false;
     }
+
   };
 
-  async fetchAndImportProduct() {
-    const users = await this.user.getAllUsers();
-    
-    for (const user of users) {
-      try {
-        const clientId = await decrypt(user.clientId);
-        const apikey = await decrypt(user.apiKey);
-        
-        const headers: headerDTO = {
-          clientId: clientId,
-          apiKey: apikey,
-          userId: String(user.id)
-        };
-        
-        // Добавляем задержку между запросами (например, 1 секунда)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const productData = await this.getProduct(headers);
-        const importProdutc = typeof productData === "string" 
-          ? productData 
-          : await this.importProduct(Number(headers.userId), productData);
-        
-      } catch (error) {
-        if (error.response?.status === 429) {
-          
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue; 
-        }
-        console.error(`Error for user ${user.id}:`, error);
-      }
+  async fetchAndImportProduct(user: any) {
+
+    try {
+      const clientId = await decrypt(user.clientId);
+      const apikey = await decrypt(user.apiKey);
+      
+      const headers: headerDTO = {
+        clientId: clientId,
+        apiKey: apikey,
+        userId: String(user.id)
+      };
+      
+      const productData = await this.getProduct(headers);
+      const importProdutc = typeof productData === "string" 
+        ? productData 
+        : await this.importProduct(Number(headers.userId), productData);
+      return true;
+    } catch (error) {
+      console.error(`Error for user ${user.id}:`, error);
+      return false;
     }
+    
   }
 
 
@@ -398,8 +363,7 @@ export class OzonSellerService {
     
     const {dateto, datefrom} = req?.body?.filter.date || {};
     const {clientId, apiKey, userId} = headers;
-    this.logger.log(clientId)
-    this.logger.log(apiKey)
+    
     if (!clientId || !apiKey || !userId) {
       await this.erorrs.logUnauthorizedError(Number(userId));
       this.logger.error(`Getting transaction data ended with an error: "Unauthorized. No Client-Id or Api-key", status: 401`)
@@ -407,23 +371,23 @@ export class OzonSellerService {
     };
 
     const dateNow = new Date();
-    const date_from = datefrom ||  new Date(dateNow.setMonth(dateNow.getMonth() - 1)).toISOString(); // За последний месяц
-    const date_to = dateto || dateNow.toISOString();
+    const date_from = datefrom ||  new Date(new Date(dateNow.setMonth(dateNow.getMonth() - 1)).setHours(0,0,0,0)).toISOString(); // За последний месяц
+    const date_to = dateto || new Date(new Date().setHours(0,0,0,0)).toISOString();
 
     const body: transactionDTO = {
-      filter: {
-        date: {
-          from: datefrom || new Date(subMonths(new Date(), 1)).toISOString(),
-          to: dateto || new Date().toISOString()
-        },
-        operation_type: operation_type || [],
-        posting_number: posting_number || "", 
-        transaction_type: transaction_type || "all"
+      "filter": {
+          "date": {
+          "from": date_from,
+          "to": date_to
+          },
+          "operation_type": ["OperationPointsForReviews"],
+          "posting_number": "",
+          "transaction_type": ""
       },
-      page: page || 1,
-      page_size: page_size || 1000
-    };
-    
+      "page": 1,
+      "page_size": 1000
+  }
+
     const httpHeader = {
       'Client-Id': clientId,
       'Api-Key': apiKey,
@@ -432,22 +396,21 @@ export class OzonSellerService {
 
     try {
       const response = await axios.post(url, body, { headers: httpHeader });
-
       const page = response.data.result.page_count;
       let data = response.data.result.operations;
-
       
-
+      this.logger.debug(response)
       if (page > 1) {
         for (let i = 2; page >= i; i++) {
+          await new Promise(resolve => setTimeout(resolve, 5000)); 
+
           const updatedBody = { ...body, page: i };
-          const nextPageResponse = await axios.post(url, updatedBody, { headers });
+          const nextPageResponse = await axios.post(url, updatedBody, { headers: httpHeader });
           data = [...data, ...nextPageResponse.data.result.operations];
         }
-      };
+      }
 
       let result:CreateTransactionDto[] = [];
-
       result.push(
         ...data.map((item:any) => {
           item.operation_id = String(item.operation_id) || null;
@@ -507,15 +470,6 @@ export class OzonSellerService {
       return (`Failed to import analytics data: ${error.message}`);
     }
   }
-
-  // // ----------RESPONSE&&IMPORT---------
-  // async fetchAndImportTransaction(userId: number, headers: headerDTO, @Req() req: Request, @Res() res: Response) {
-  //   headers.userId = String(userId);
-  //   Logger.log("Start Transaction..")
-  //   const transactionData = await this.getTransactions(headers, req, res);
-  //   await this.importTransaction(userId, transactionData);
-  //   Logger.log("\nTransaction end.")
-  // }
 
 
   //_________________________________PRODUCT_________________________________

@@ -19,44 +19,38 @@ export class PerformanceTaskService implements OnModuleInit {
 
   async onModuleInit() {
     this.updateToken();
-    this.getCampaigns();
-    this.createBundle();
+    // this.getCampaigns();
+    // this.createBundle();
   };
 
   
 
   @Cron('*/25 * * * *')
   async updateToken() {
-    this.logger.log('Running token update...');
     try {
       await this.token.updateTokens();
-      this.logger.log('Token update completed');
     } catch (error) {
-      // this.logger.error('Token update failed', error.stack);
+      this.logger.error('Token update failed', error.code || error.status || error.message || error.text);
     }
   }
 
   @Cron(CronExpression.EVERY_5_HOURS)
   async getCampaigns() {
-    this.logger.log("Get campaigns");
     await this.perfor.getCampaigns();
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkReport() {
-    this.logger.log('Registration reports...');
     await this.report.registrationReport();
   }
 
   @Cron(CronExpression.EVERY_5_HOURS)
   async createBundle() {
-    this.logger.log('Creating bundles...');
     await this.bundle.registerBundleForAllUsers();
   }
 
   @Cron('*/2 * * * *')
   async chekReadyReport() {
-    this.logger.log('Checking ready report...')
     await this.report.chekReadyReport();
   }
 }

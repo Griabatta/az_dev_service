@@ -44,6 +44,7 @@ model User {
   bundle             Bundle[]       
   camaignItem        CampaignItem[]    
   reviews            ProductReview[]
+  tasks              Task[]
 }
 
 model CampaignTemplate {
@@ -126,7 +127,7 @@ model Stock_Warehouse {
 model Transaction_List {
   id                      Int     @id @default(autoincrement()) 
 
-  operation_id            String  @unique
+  operation_id            String  
   operation_type          String
   operation_date          String
   operation_type_name     String
@@ -163,7 +164,7 @@ model Product_List {
   has_fbo_stocks      Boolean
   has_fbs_stocks      Boolean
   is_discounted       Boolean
-  offer_id            String    @unique
+  offer_id            String    
   product_id          String
   // quants
   quants              String?
@@ -260,21 +261,19 @@ model CampaignItem {
 
 model ProductReview {
   id                 Int      @id @default(autoincrement())
-  reviewId           String   @unique
-  comments_amount    Int      @default(0)
-  dislikes_amount    Int      @default(0)
-  is_rating_participant Boolean @default(false)
-  likes_amount       Int      @default(0)
-  order_status       String
-  photos             String   @default("[]")
-  photos_amount      Int      @default(0)
-  published_at       DateTime
-  rating             Int      @default(0)
-  sku                Int
-  status             String
-  text               String?
-  videos             String   @default("[]")
-  videos_amount      Int      @default(0)
+  reviewId           String
+  comments_amount    Int
+  is_rating_participant Boolean
+  order_status        String
+  photos_amount       Int
+  published_at        String
+  rating              Int
+  offerId             String
+  sku                 String
+  product_id          String
+  status              String
+  text                String
+  videos_amount       Int
 
   userId             Int
   user               User     @relation(fields: [userId], references: [id])
@@ -282,11 +281,11 @@ model ProductReview {
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   
-  @@unique([userId, reviewId, createAt], name: "Review_user_review_date")
+  @@unique([userId, reviewId, published_at], name: "Review_user_review_date")
 }
 
 model Task {
-  id          String      @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   type        String
   serviceName String
   status      String      @default("PENDING")
@@ -294,8 +293,9 @@ model Task {
   updatedAt   DateTime    @updatedAt
   metadata    Json?
 
-
-
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  
   @@index([type])
   @@index([serviceName])
   @@index([status])

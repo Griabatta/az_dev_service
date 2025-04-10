@@ -40,27 +40,6 @@ export class SellerController {
     };
   };
 
-  // @Post('import/analytics')
-  // async importAnalytics(
-  //   @Headers('Client-Id') clientId: string ,
-  //   @Headers('Api-Key') apiKey: string,
-  //   @Req() req: Request,
-  //   @Res() res: Response
-  // ) {
-  //   const headers: headerDTO = {
-  //     'Client-Id': clientId,
-  //     'Api-Key': apiKey,
-  //   };
-
-  //   try {
-  //     const data = await this.OzonSellerService.fetchAndImportAnalytics(2, headers, req, res);
-  //     res.json(data);
-  //   } catch (error) {
-  //     res.status(500).send({ message: error.message });
-  //   };
-    
-  // }
-
   //----------------END ANALYTICS-------------------
 
   //----------------STOCK-------------------
@@ -85,25 +64,7 @@ export class SellerController {
     }
   }
   
-  // @Post('import/stock')
-  // async importStock(
-  //   @Headers('Client-Id') clientId: string ,
-  //   @Headers('Api-Key') apiKey: string,
-  //   @Req() req: Request,
-  //   @Res() res: Response
-  // ) {
-  //   const headers: headerDTO = {
-  //     'Client-Id': clientId,
-  //     'Api-Key': apiKey,
-  //   };
-    
-  //   try {
-  //     const data = await this.OzonSellerService.fetchAndImportStock(2, headers, req, res);
-  //     res.json(data);
-  //   } catch (error) {
-  //     res.status(500).send({ message: error.message });
-  //   }
-  // }
+  
 
   //----------------END STOCK-------------------
 
@@ -127,27 +88,7 @@ export class SellerController {
     } catch (error) {
       res.status(500).send({ message: error.message });
     }
-  }
-
-  // @Post('import/transactions')
-  // async importTransactions(
-  //   @Headers('Client-Id') clientId: string ,
-  //   @Headers('Api-Key') apiKey: string,
-  //   @Req() req: Request,
-  //   @Res() res: Response
-  // ) {
-  //   const headers: headerDTO = {
-  //     'Client-Id': clientId,
-  //     'Api-Key': apiKey,
-  //   };
-
-  //   try {
-  //     const data = await this.OzonSellerService.fetchAndImportTransaction(2, headers, req, res);
-  //     res.json(data);
-  //   } catch (error) {
-  //     res.status(500).send({ message: error.message });
-  //   }
-  // }
+  }  
 
   //----------------END TRANSACTION-------------------
 
@@ -171,26 +112,6 @@ export class SellerController {
       res.status(500).send({ message: error.message });
     }
   }
-
-  // @Post('import/product-list')
-  // async importProductList(
-  //   @Headers('Client-Id') clientId: string ,
-  //   @Headers('Api-Key') apiKey: string,
-  //   @Req() req: Request,
-  //   @Res() res: Response
-  // ) {
-  //   const headers: headerDTO = {
-  //     'Client-Id': clientId,
-  //     'Api-Key': apiKey,
-  //   };
-
-  //   try {
-  //     const data = await this.OzonSellerService.fetchAndImportProduct(2, headers, req, res);
-  //     res.json(data);
-  //   } catch (error) {
-  //     res.status(500).send({ message: error.message });
-  //   }
-  // }
 
   //----------------END PRODUCT LIST-------------------
 
