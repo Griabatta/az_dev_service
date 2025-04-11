@@ -30,7 +30,7 @@ export class TokenRepo {
 
   async getTokenByUserId(userId: number) {
    try {
-    return this.prisma.performanceToken.findFirst({
+    return this.prisma.performanceToken.findUnique({
       where: {
         userId
       },

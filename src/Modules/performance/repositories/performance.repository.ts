@@ -4,6 +4,7 @@ import { CampaignTemplateDto } from '../models/performance.dto';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
 import { CampaignDto } from '../models/campaint.dto';
 import { Prisma } from '@prisma/client';
+import { isValid, startOfDay } from 'date-fns';
 
 @Injectable()
 export class PerformanceRepository {
@@ -18,47 +19,42 @@ export class PerformanceRepository {
     });
   }
 
-  // async upsertCampaign(userId: number, data: CampaignDto) {
-  //   return this.prisma.campaignTemplate.upsert({
-  //     where: { userId: userId },
-  //     create: {
-  //       // campaignId: data.id, // Removed as it is not a valid property
-  //       title: data.title,
-  //       state: data.state,
-  //       advObjectType: data.advObjectType,
-  //       fromDate: new Date(data.fromDate),
-  //       toDate: data.toDate ? new Date(data.toDate) : null,
-  //       dailyBudget: data.dailyBudget.toString(),
-  //       budget: data.budget.toString(),
-  //       productCampaignMode: data.productCampaignMode,
-  //       productAutopilotStrategy: data.productAutopilotStrategy,
-  //       paymentType: data.paymentType,
-  //       expenseStrategy: data.expenseStrategy,
-  //       weeklyBudget: data.weeklyBudget.toString(),
-  //       budgetType: data.budgetType,
-  //       startWeekDay: data.startWeekDay,
-  //       endWeekDay: data.endWeekDay,
-  //       maxBid: data.maxBid?.toString(),
-  //       categoryId: data.categoryId?.toString(),
-  //       skuAddMode: data.skuAddMode,
-  //       filters: data.filter.toString(),
-  //       placement: data.placement, // Сохраняем как JSON строку
-  //       userId,
-  //       createdAt: new Date(), // Add default createdAt
-  //       updatedAt: new Date(), // Add default updatedAt
-  //     },
-  //     update: {
-  //       title: data.title,
-  //       state: data.state,
-  //       // ... все обновляемые поля
-  //       placement: data.placement,
-  //       maxBid: data.maxBid?.toString(),
-  //       categoryId: data.categoryId?.toString(),
-  //       skuAddMode: data.skuAddMode,
-  //       filters: data.filter.toString(),
-  //     },
-  //   });
-  // }
+  // async upsertmany(data: any[], userId: number) {
+  //         return await this.prisma.$transaction(
+  //             data.map(item => {
+                
+  //               const rawDate = item.createAt ? new Date(item.createAt) : new Date();
+                
+  //               if (!isValid(rawDate)) {
+  //                 throw new Error(`Invalid date format: ${item.createAt}`);
+  //               }
+                
+  //               const dateAtStartOfDay = startOfDay(rawDate);
+          
+  //               return this.prisma.campaignItem.upsert({
+  //                 where: {
+  //                   campaign_user_date_camp: {
+  //                     userId,
+  //                     campaignId: item.campaignId,
+  //                     createdAtDB: dateAtStartOfDay
+  //                   }
+  //                 },
+  //                 create: {
+  //                     userId: userId,
+  //                     createdAt: item.createAt,
+  //                     ...item
+  //                 },
+  //                 update: {
+  //                     userId: userId,
+  //                   createAt: item.createAt,
+  //                   ...item
+  //                 }
+  //               });
+  //             })
+  //           );
+  //     }
+
+  
 
   async getCampaignsByUserId(userId: number) {
     return this.prisma.campaignTemplate.findMany({

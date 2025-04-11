@@ -18,20 +18,9 @@ export class OzonScheduler implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    this.SendDataAnalytics();
-    this.SendDataStock();
-    this.SendDataTransaction();
-    this.SendDataProductList();
 
   }
-  // @Cron(CronExpression.EVERY_2_HOURS)
-  // async handleCron() {
-  //   await this.sellerController.fetchAndImport();
-  // };
-  @Cron(CronExpression.EVERY_12_HOURS)
-  async getCampaigns() {
-    await this.campaigns.getCampaigns();
-  }
+  
   @Cron('*/10 * * * *')
   async SendDataAnalytics() {
     await this.exporter.ExportInSheet('Analytics');

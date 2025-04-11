@@ -108,7 +108,6 @@ export class TokenService {
               this.logger.log(`Token created for user ${user.id}`);
             } else {
               await this.tokenRepo.updateToken(access_token, user.id);
-              this.logger.log(`Token updated for user ${user.id}`);
             }
             
           } catch (error) {

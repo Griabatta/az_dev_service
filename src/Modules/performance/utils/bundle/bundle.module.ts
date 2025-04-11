@@ -17,7 +17,7 @@ import { UserModule } from "src/Modules/Auth/user.module";
     TokenModule,
     PrismaModule,
     forwardRef(() => PerformanceModule),
-    UserModule
+    forwardRef(() => UserModule)
   ],
   controllers: [BundleController],
   providers: [

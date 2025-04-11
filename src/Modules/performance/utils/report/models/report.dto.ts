@@ -13,7 +13,7 @@ export class CreateReportDTO {
 
     @IsString()
     @IsOptional()
-    type?:        string | undefined
+    type?:        string | ""
 
     @IsArray()
     uuid:         string
@@ -99,3 +99,26 @@ export interface ParsedCampaignItem {
   userId: number;        // ID пользователя
   type: string;          // Тип кампании (например, "product")
 }
+
+export type CampaignItemInput = {
+  searchQuery?: string;
+  sku?: string;
+  title?: string;
+  price?: string;
+  views?: number;
+  clicks?: number;
+  ctr?: string;
+  toCart?: number;
+  avgBid?: string;
+  moneySpent?: string;
+  orders?: number;
+  ordersMoney?: string;
+  models?: number;
+  modelsMoney?: string;
+  drr?: string;
+  createdAtDB: Date; // Обязательное поле (часть уникального ключа)
+  campaignId: string; // Обязательное поле (часть уникального ключа)
+  userId: number;    // Обязательное поле (часть уникального ключа)
+  type: string;
+  // Поле id не включаем - оно autoincrement
+};

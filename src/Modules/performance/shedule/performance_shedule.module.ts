@@ -9,9 +9,9 @@ import { PerformanceModule } from "../performance.module";
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    BundleModule,
-    ReportModule,
-    TokenModule,
+    forwardRef(() => BundleModule),  // Добавляем forwardRef для BundleModule
+    forwardRef(() => ReportModule),  // Добавляем forwardRef для ReportModule
+    forwardRef(() => TokenModule),   // Уже есть, оставляем
     forwardRef(() => PerformanceModule)
   ],
   providers: [PerformanceTaskService], 

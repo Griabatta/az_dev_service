@@ -9,6 +9,7 @@ import { PerformanceCampaingsRep } from "./repositories/campaings.repostiroty";
 import { TokenModule } from "./utils/token/token.module";
 import { UserModule } from "../Auth/user.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { SellerModule } from "../Seller/seller.module";
 
 
 @Module({
@@ -19,7 +20,8 @@ import { ScheduleModule } from "@nestjs/schedule";
     JournalErrorsModule,
     PrismaModule,
     forwardRef(() => TokenModule),
-    UserModule,
+    forwardRef(() => UserModule),
+    forwardRef(() => SellerModule)
 
   ],
   providers: [

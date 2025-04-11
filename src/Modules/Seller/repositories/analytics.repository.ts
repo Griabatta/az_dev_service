@@ -1,13 +1,17 @@
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { formatISO, isValid, startOfDay } from 'date-fns';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
+import { generalForSeller } from './general';
 
 @Injectable()
 export class AnalyticsRepository {
+  private readonly logger = new Logger(AnalyticsRepository.name)
   constructor(
-    private readonly prisma: PrismaService) {}
+    private readonly prisma: PrismaService,
+    private readonly general: generalForSeller
+  ) {}
 
   async create(data: Prisma.AnalyticsCreateInput) {
     return this.prisma.analytics.create({
@@ -15,39 +19,93 @@ export class AnalyticsRepository {
     });
   }
 
-  async upsertManyAnalytics(data: any[], userId: number) {
-    return await this.prisma.$transaction(
-      data.map(item => {
-        // 1. Получаем дату из item.date или используем текущую дату
-        const rawDate = item.date ? new Date(item.date) : new Date();
-        
-        // 2. Проверяем валидность даты
-        if (!isValid(rawDate)) {
-          throw new Error(`Invalid date format: ${item.date}`);
-        }
-        
-        const dateAtStartOfDay = startOfDay(rawDate);
+  // async upsertManyAnalytics(data: any[], userId: number) {
+  //   const chunkSize = 20;
+  //   const chunks = Array.from(
+  //     { length: Math.ceil(data.length / chunkSize) },
+  //     (_, i) => data.slice(i * chunkSize, (i + 1) * chunkSize)
+  //   );
   
-        return this.prisma.analytics.upsert({
-          where: {
-            analytics_user_dimensions_date: {
-              userId,
-              dimensionsId: item.dimensionsId,
-              createAt: dateAtStartOfDay
-            }
-          },
-          create: {
-            userId,
-            ...item,
-            createAt: dateAtStartOfDay
-          },
-          update: {
-            revenue: item.revenue,
-            ...item
-          }
-        });
-      })
+  //   for (const chunk of chunks) {
+  //     try {
+  //       await this.prisma.$transaction(
+  //         chunk.map(item => {
+  //           const rawDate = item.date ? new Date(item.date) : new Date();
+  //           if (!isValid(rawDate)) throw new Error(`Invalid date: ${item.date}`);
+  
+  //           const dateAtStartOfDay = startOfDay(rawDate);
+  //           const { userId, createdAt, dimensionsId, ...updateData } = item;
+  
+  //           return this.prisma.analytics.upsert({
+  //             where: {
+  //               analytics_user_dimensions_date: {
+  //                 userId,
+  //                 dimensionsId: item.dimensionsId,
+  //                 createAt: dateAtStartOfDay
+  //               }
+  //             },
+  //             create: { userId, ...item, createAt: dateAtStartOfDay },
+  //             update: updateData
+  //           });
+  //         })
+  //       );
+  //     } catch (error) {
+  //       this.logger.error(`Chunk failed: ${error.message}`);
+  //       throw error;
+  //     }
+  //   }
+  // }
+  async upsertManyAnalytics(data: any, userId: number) {
+    const existing = await this.prisma.analytics.findMany({
+      where: {
+        userId,
+        createAt: {
+          in: data.map(d => startOfDay(d.dimensionsDate ? new Date(d.dimensionsDate) : new Date()))
+        },
+        dimensionsId: {
+          in: data.map(d => d.dimensionsId).filter(Number)
+        }
+      },
+      select: { userId: true, dimensionsId: true, createAt: true, id: true }
+    });
+  
+    const existingMap = new Map(
+      existing.map(item => [
+        `${item.userId}_${item.dimensionsId}_${item.createAt.toISOString()}`,
+        item.id
+      ])
     );
+  
+    const { toCreate, toUpdate } = data.reduce((acc, item) => {
+      const date = startOfDay(item.dimensionsDate ? new Date(item.dimensionsDate) : new Date());
+      const key = `${userId}_${item.dimensionsId}_${date.toISOString()}`;
+      
+      if (existingMap.has(key)) {
+        acc.toUpdate.push({
+          id: existingMap.get(key)!,
+          data: this.general.getChangedFields(item, existing.find(e => e.id === existingMap.get(key))!)
+        });
+      } else {
+        acc.toCreate.push({ ...item, userId, createAt: date });
+      }
+      return acc;
+    }, { toCreate: [], toUpdate: [] });
+  
+    // Batch create
+    if (toCreate.length) {
+      await this.prisma.analytics.createMany({
+        data: toCreate,
+        skipDuplicates: true
+      });
+    }
+  
+    // Batch update
+    for (const { id, data } of toUpdate) {
+      await this.prisma.analytics.update({
+        where: { id },
+        data
+      });
+    }
   }
 
   async createMany(data: Prisma.AnalyticsCreateManyInput[]) {
@@ -72,6 +130,7 @@ export class AnalyticsRepository {
       select: {
         id: true,
         createAt: true,
+        dimensionsDate: true,
         dimensionsId: true,
         dimensionsName: true,
         revenue: true,

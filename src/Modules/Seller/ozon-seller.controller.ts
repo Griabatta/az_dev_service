@@ -21,19 +21,11 @@ export class SellerController {
 
   @Post('/analytics')
   async Analyst(
-    @Headers('Client-Id') clientId: string ,
-    @Headers('Api-Key') apiKey: string,
     @Req() req: Request,
     @Res() res: Response
   ) {
-    
-    const headers: headerDTO = {
-      'Client-Id': clientId,
-      'Api-Key': apiKey,
-    };
-
     try {
-      const data = await this.OzonSellerService.getAnalyst(headers, req);
+      const data = await this.OzonSellerService.fetchAndImportAnalytics(undefined, req.body.userId, req.body);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });
@@ -57,7 +49,7 @@ export class SellerController {
     };
     
     try {
-      const data = await this.OzonSellerService.getStock(headers, req, res);
+      const data = await this.OzonSellerService.fetchAndImportStock(undefined, req.body.userId, req.body);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });
@@ -83,7 +75,7 @@ export class SellerController {
     };
 
     try {
-      const data = await this.OzonSellerService.getTransactions(headers, req, res);
+      const data = await this.OzonSellerService.fetchAndImportTransaction(undefined, req.body.userId, req.body);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });
@@ -106,7 +98,7 @@ export class SellerController {
     };
 
     try {
-      const data = await this.OzonSellerService.getProduct(headers, req, res);
+      const data = await this.OzonSellerService.fetchAndImportProduct(undefined, req.body.userId, req.body);
       res.json(data);
     } catch (error) {
       res.status(500).send({ message: error.message });

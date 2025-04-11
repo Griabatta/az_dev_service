@@ -4,6 +4,7 @@ import { ReportService } from "../utils/report/report.service";
 import { BundleService } from "../utils/bundle/bundle.service";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { OzonPerformanceService } from "../ozon_performance.service";
+import { PrismaService } from "src/Modules/Prisma/prisma.service";
 
 
 @Injectable()
@@ -14,12 +15,15 @@ export class PerformanceTaskService implements OnModuleInit {
     private readonly token: TokenService,
     private readonly report: ReportService,
     private readonly bundle: BundleService,
-    private readonly perfor: OzonPerformanceService
   ) {}
 
   async onModuleInit() {
     this.updateToken();
-    // this.getCampaigns();
+    this.createBundle();
+    // users.map(async user => {
+    //   const campaigns = 
+    // })
+    // // this.getCampaigns();
     // this.createBundle();
   };
 
@@ -34,10 +38,10 @@ export class PerformanceTaskService implements OnModuleInit {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_HOURS)
-  async getCampaigns() {
-    await this.perfor.getCampaigns();
-  }
+  // @Cron(CronExpression.EVERY_5_HOURS)
+  // async getCampaigns() {
+  //   await this.perfor.getCampaigns();
+  // }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkReport() {

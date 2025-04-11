@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JournalErrorsModule } from 'src/Modules/Errors/errors.module';
 import { GoogleSheetsModule } from 'src/Modules/exporter/exports.module';
@@ -10,8 +10,8 @@ import { SellerModule } from 'src/Modules/Seller/seller.module';
   imports: 
   [
     ScheduleModule.forRoot(),
-    PerformanceModule,
-    SellerModule,
+    forwardRef(() => PerformanceModule),
+    forwardRef(() => SellerModule),
     JournalErrorsModule,
     GoogleSheetsModule,
     PrismaModule,

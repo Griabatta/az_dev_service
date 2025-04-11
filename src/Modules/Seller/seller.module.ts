@@ -10,21 +10,23 @@ import { TransactionRepository } from './repositories/transaction.repository';
 import { ProductRepository } from './repositories/productList.repository';
 import { UserModule } from '../Auth/user.module';
 import { JournalErrorsModule } from '../Errors/errors.module';
-import { PerformanceModule } from '../performance/performance.module';
 import { GoogleSheetsModule } from '../exporter/exports.module';
 import { ReviewService } from './ozon_review.service';
+import { PrismaModule } from '../Prisma/prisma.module';
+import { PerformanceModule } from '../performance/performance.module';
+import { generalForSeller } from './repositories/general';
 
 @Module({
   imports: [
-    UserModule,
+    forwardRef(() => UserModule),
     JournalErrorsModule,
-    PerformanceModule,
-    forwardRef(() => GoogleSheetsModule)
+    PrismaModule,
+    forwardRef(() => GoogleSheetsModule),
+    forwardRef(() => PerformanceModule),
   ],
   controllers: [SellerController],
   providers: [
     OzonSellerService,
-    PrismaService,
     DuplicateChecker,
     OzonScheduler,
     SellerController,
@@ -32,7 +34,8 @@ import { ReviewService } from './ozon_review.service';
     AnalyticsRepository,
     TransactionRepository,
     ProductRepository,
-    ReviewService
+    ReviewService,
+    generalForSeller
   ],
   exports: [StockRepository, AnalyticsRepository, TransactionRepository, ProductRepository, OzonSellerService, ReviewService]
 })

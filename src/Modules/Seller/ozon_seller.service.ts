@@ -13,7 +13,7 @@ import { JournalErrorsService } from '../Errors/errors.service';
 import { analystDTO, headerDTO, metricGroups, metricTemplate, productListDTO, stockDTO, transactionDTO } from './models/seller.dto';
 import { decrypt } from 'src/tools/data.crypt';
 import { UserService } from '../Auth/auth.service';
-import { formatISO, subMonths } from 'date-fns';
+import { formatISO, subDays, subMonths } from 'date-fns';
 
 @Injectable()
 export class OzonSellerService {
@@ -30,7 +30,11 @@ export class OzonSellerService {
     private readonly erorrs: JournalErrorsService,
     private readonly user: UserService
   ) {}
-  async fetchAndImportAnalytics(user: any) {
+  async fetchAndImportAnalytics(user: any, userId?: number, payload?: any) {
+    
+    if (userId) {
+      user = await this.user.getUserById(userId)
+    };
     
     try {
       const clientId = await decrypt(user.clientId);
@@ -43,11 +47,13 @@ export class OzonSellerService {
       };
       
       
-      const analyticsData = await this.getAnalyst(headers);
+      const analyticsData = await this.getAnalyst(headers, payload);
       const importAnalytics = typeof analyticsData === "string" 
         ? analyticsData 
         : await this.importAnalytics(Number(headers.userId), analyticsData);
-      return true;
+
+        
+      return;
     } catch (error) {
       console.error(`Error for user ${user.id}:`, error);
       return false;
@@ -55,7 +61,11 @@ export class OzonSellerService {
     
   };
 
-  async fetchAndImportStock(user: any) {
+  async fetchAndImportStock(user: any, userId?: number, payload?: any) {
+
+    if (userId) {
+      user = await this.user.getUserById(userId)
+    };
 
     try {
       const clientId = await decrypt(user.clientId);
@@ -68,7 +78,7 @@ export class OzonSellerService {
       };
       
       
-      const stockData = await this.getStock(headers);
+      const stockData = await this.getStock(headers, payload);
       const importStock = typeof stockData === "string" 
         ? stockData 
         : await this.importStock(Number(headers.userId), stockData);
@@ -80,7 +90,11 @@ export class OzonSellerService {
     
   };
 
-  async fetchAndImportTransaction(user: any) {
+  async fetchAndImportTransaction(user: any, userId?: number, payload?: any) {
+
+    if (userId) {
+      user = await this.user.getUserById(userId)
+    };
 
     try {
       const clientId = await decrypt(user.clientId);
@@ -92,7 +106,7 @@ export class OzonSellerService {
         userId: String(user.id)
       };
       
-      const transactionData = await this.getTransactions(headers);
+      const transactionData = await this.getTransactions(headers, payload);
       const importTransaction = typeof transactionData === "string" 
         ? transactionData 
         : await this.importTransaction(Number(headers.userId), transactionData);
@@ -105,7 +119,11 @@ export class OzonSellerService {
 
   };
 
-  async fetchAndImportProduct(user: any) {
+  async fetchAndImportProduct(user: any, userId?: number, payload?: any) {
+
+    if (userId) {
+      user = await this.user.getUserById(userId)
+    };
 
     try {
       const clientId = await decrypt(user.clientId);
@@ -117,7 +135,7 @@ export class OzonSellerService {
         userId: String(user.id)
       };
       
-      const productData = await this.getProduct(headers);
+      const productData = await this.getProduct(headers, payload);
       const importProdutc = typeof productData === "string" 
         ? productData 
         : await this.importProduct(Number(headers.userId), productData);
@@ -168,7 +186,7 @@ export class OzonSellerService {
     const { datefrom, dateto, dimension, filters, sort, limit, offset } = req?.body || {};
 
     const dateNow = new Date();
-    const date_from = datefrom || new Date(dateNow.setMonth(dateNow.getMonth() - 1)).toISOString().slice(0, 10);
+    const date_from = datefrom || new Date(new Date(subDays(dateNow, 7)).setHours(0,0,0,0)).toISOString();;
     const date_to = dateto || dateNow.toISOString().slice(0, 10);
 
     const defaultDimensions = ['sku', 'day'];
@@ -178,7 +196,6 @@ export class OzonSellerService {
       'Api-Key': apiKey,
       'Content-Type': 'application/json'
     };
-  
     try {
 
 
@@ -208,6 +225,7 @@ export class OzonSellerService {
         const baseItem = {
           dimensionsId: Number(item.dimensions[0]?.id || 0),
           dimensionsName: item.dimensions[0]?.name || 0,
+          dimensionsDate: item.dimensions[1].id || "",
           ...metricTemplate // Инициализируем все метрики нулями
         };
         
@@ -233,6 +251,7 @@ export class OzonSellerService {
         serviceName: "Seller/Analytics/Data/request"
       });
       this.logger.error(error.message)
+      this.logger.error(error.code || error)
       return String(error.message);
     }
   }
@@ -245,7 +264,12 @@ export class OzonSellerService {
     };
 
     try {
-      await this.repAnalyt.upsertManyAnalytics(analyticsData, userId);  
+      const chunkSize = 20;
+      for (let i = 0; i < analyticsData.length; i += chunkSize) {
+        const chunk = analyticsData.slice(i, i + chunkSize);
+        await this.repAnalyt.upsertManyAnalytics(chunk, userId);
+      }
+      // await this.repAnalyt.upsertManyAnalytics(analyticsData, userId);  
       
 
     } catch (error) {
@@ -324,8 +348,12 @@ export class OzonSellerService {
 
 
     try {
-
-      await this.repStock.upsertManyStock(stockData, userId)
+      const chunkSize = 20;
+      for (let i = 0; i < stockData.length; i += chunkSize) {
+        const chunk = stockData.slice(i, i + chunkSize);
+        await this.repStock.upsertManyStock(chunk, userId);
+      }
+      // await this.repStock.upsertManyStock(stockData, userId)
 
 
     } catch (error) {
@@ -371,7 +399,7 @@ export class OzonSellerService {
     };
 
     const dateNow = new Date();
-    const date_from = datefrom ||  new Date(new Date(dateNow.setMonth(dateNow.getMonth() - 1)).setHours(0,0,0,0)).toISOString(); // За последний месяц
+    const date_from = datefrom ||  new Date(new Date(subDays(dateNow, 1)).setHours(0,0,0,0)).toISOString(); // За последний месяц
     const date_to = dateto || new Date(new Date().setHours(0,0,0,0)).toISOString();
 
     const body: transactionDTO = {
@@ -399,7 +427,6 @@ export class OzonSellerService {
       const page = response.data.result.page_count;
       let data = response.data.result.operations;
       
-      this.logger.debug(response)
       if (page > 1) {
         for (let i = 2; page >= i; i++) {
           await new Promise(resolve => setTimeout(resolve, 5000)); 
@@ -451,7 +478,12 @@ export class OzonSellerService {
     
 
     try {
-      await this.repTrans.upsertManyTransaction(transactionData, userId);
+      const chunkSize = 20;
+      for (let i = 0; i < transactionData.length; i += chunkSize) {
+        const chunk = transactionData.slice(i, i + chunkSize);
+        await this.repTrans.upsertManyTransaction(chunk, userId);
+      }
+      // await this.repTrans.upsertManyTransaction(transactionData, userId);
       
 
     } catch (error) {
@@ -564,8 +596,12 @@ export class OzonSellerService {
 
 
     try {
-
-      await this.repProduct.upsertManyProduct(productData, userId);
+      const chunkSize = 20;
+      for (let i = 0; i < productData.length; i += chunkSize) {
+        const chunk = productData.slice(i, i + chunkSize);
+        await this.repProduct.upsertManyProduct(chunk, userId);
+      }
+      // await this.repProduct.upsertManyProduct(productData, userId);
       
 
     } catch (error) {

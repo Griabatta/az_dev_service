@@ -41,6 +41,7 @@ CREATE TABLE "Analytics" (
     "id" SERIAL NOT NULL,
     "dimensionsId" INTEGER,
     "dimensionsName" TEXT,
+    "dimensionsDate" TEXT,
     "revenue" INTEGER,
     "ordered_units" INTEGER,
     "hits_view_search" INTEGER,
@@ -174,7 +175,6 @@ CREATE TABLE "Bundle" (
     "campaigns" TEXT[],
     "status" TEXT NOT NULL DEFAULT 'In progress',
     "userId" INTEGER NOT NULL,
-    "reportsId" INTEGER,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
 
@@ -200,7 +200,7 @@ CREATE TABLE "CampaignItem" (
     "modelsMoney" TEXT,
     "drr" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAtDB" TEXT NOT NULL,
+    "createdAtDB" TIMESTAMP(3) NOT NULL,
     "campaignId" TEXT NOT NULL,
     "userId" INTEGER NOT NULL,
     "type" TEXT NOT NULL,
@@ -270,22 +270,16 @@ CREATE UNIQUE INDEX "User_tableSheetId_key" ON "User"("tableSheetId");
 CREATE UNIQUE INDEX "User_performanceTokenId_key" ON "User"("performanceTokenId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CampaignTemplate_campaignId_key" ON "CampaignTemplate"("campaignId");
+CREATE UNIQUE INDEX "CampaignTemplate_campaignId_userId_createdAt_key" ON "CampaignTemplate"("campaignId", "userId", "createdAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Analytics_userId_dimensionsId_createAt_key" ON "Analytics"("userId", "dimensionsId", "createAt");
+CREATE UNIQUE INDEX "Analytics_userId_dimensionsId_dimensionsDate_key" ON "Analytics"("userId", "dimensionsId", "dimensionsDate");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Stock_Warehouse_userId_sku_warehouse_name_createAt_key" ON "Stock_Warehouse"("userId", "sku", "warehouse_name", "createAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Transaction_List_operation_id_key" ON "Transaction_List"("operation_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Transaction_List_userId_operation_id_createAt_key" ON "Transaction_List"("userId", "operation_id", "createAt");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Product_List_offer_id_key" ON "Product_List"("offer_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Product_List_userId_offer_id_createAt_key" ON "Product_List"("userId", "offer_id", "createAt");
@@ -300,25 +294,19 @@ CREATE UNIQUE INDEX "PerformanceToken_userId_key" ON "PerformanceToken"("userId"
 CREATE UNIQUE INDEX "Reports_uuid_key" ON "Reports"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Reports_bundleId_key" ON "Reports"("bundleId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Bundle_campaigns_key" ON "Bundle"("campaigns");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Bundle_reportsId_key" ON "Bundle"("reportsId");
+CREATE UNIQUE INDEX "CampaignItem_userId_createdAtDB_campaignId_key" ON "CampaignItem"("userId", "createdAtDB", "campaignId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProductReview_userId_reviewId_published_at_key" ON "ProductReview"("userId", "reviewId", "published_at");
 
 -- CreateIndex
-CREATE INDEX "Task_type_idx" ON "Task"("type");
-
--- CreateIndex
-CREATE INDEX "Task_serviceName_idx" ON "Task"("serviceName");
-
--- CreateIndex
 CREATE INDEX "Task_status_idx" ON "Task"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Task_userId_serviceName_type_key" ON "Task"("userId", "serviceName", "type");
 
 -- AddForeignKey
 ALTER TABLE "CampaignTemplate" ADD CONSTRAINT "CampaignTemplate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

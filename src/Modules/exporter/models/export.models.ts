@@ -23,6 +23,7 @@ export const SheetName = (typeRequest: string | undefined) => {
 export const keysForAnalytics = [
     'id',
     'Дата запроса',
+    'Дата',
     'model_id',
     'model',
     'Заказано на сумму',

@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { formatISO, isValid, startOfDay } from 'date-fns';
 import { PrismaService } from 'src/Modules/Prisma/prisma.service';
+import { generalForSeller } from './general';
 
 @Injectable()
 export class ProductRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ProductRepository.name)
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly general: generalForSeller
+  ) {}
 
   async create(data: Prisma.Product_ListCreateInput) {
     return this.prisma.product_List.create({ data });
@@ -18,46 +23,92 @@ export class ProductRepository {
     });
   };
 
+  // async upsertManyProduct(data: any[], userId: number) {
+  //   const chunkSize = 20;
+  //   const chunks = Array.from(
+  //     { length: Math.ceil(data.length / chunkSize) },
+  //     (_, i) => data.slice(i * chunkSize, (i + 1) * chunkSize)
+  //   );
+  
+  //   for (const chunk of chunks) {
+  //     try {
+  //       await this.prisma.$transaction(
+  //         chunk.map(item => {
+  //           const rawDate = item.date ? new Date(item.date) : new Date();
+  //           if (!isValid(rawDate)) throw new Error(`Invalid date: ${item.date}`);
+  
+  //           const dateAtStartOfDay = startOfDay(rawDate);
+  //           const { userId, createdAt, offer_id, ...updateData } = item;
+  
+  //           return this.prisma.product_List.upsert({
+  //             where: {
+  //               product_user_offer_date: {
+  //                 userId,
+  //                 offer_id: item.offer_id,
+  //                 createAt: dateAtStartOfDay
+  //               }
+  //             },
+  //             create: { userId, ...item, createAt: dateAtStartOfDay },
+  //             update: updateData
+  //           });
+  //         })
+  //       );
+  //     } catch (error) {
+  //       this.logger.error(`Chunk failed: ${error.message}`);
+  //       throw error;
+  //     }
+  //   }
+  // }
+
   async upsertManyProduct(data: any[], userId: number) {
-      return await this.prisma.$transaction(
-        data.map(item => {
-          
-          const rawDate = item.date ? new Date(item.date) : new Date();
-          
-          if (!isValid(rawDate)) {
-            throw new Error(`Invalid date format: ${item.date}`);
-          }
-          
-          const dateAtStartOfDay = startOfDay(rawDate);
+    const existingMap = await this.getExistingProductsMap(data, userId);
     
-          return this.prisma.product_List.upsert({
-            where: {
-              product_user_offer_date: {
-                userId,
-                offer_id: item.offer_id,
-                createAt: dateAtStartOfDay
-              }
-            },
-            create: {
-              userId,
-              offer_id: item.offer_id,
-              createAt: dateAtStartOfDay,
-              has_fbo_stocks: item.has_fbo_stocks,
-              has_fbs_stocks: item.has_fbs_stocks,
-              is_discounted: item.is_discounted,
-              quants: item.quants,
-              archived: item.archived,
-              product_id: item.product_id
-            },
-            update: {
-              offer_id: item.offer_id,
-              createAt: item.createAt,
-              ...item
-            }
-          });
-        })
-      );
+    const { toCreate, toUpdate } = data.reduce((acc, item) => {
+      const date = startOfDay(item.createAt ? new Date(item.createAt) : new Date());
+      const key = `${userId}_${item.offer_id}_${date.toISOString()}`;
+      
+      if (existingMap.has(key)) {
+        acc.toUpdate.push({
+          id: existingMap.get(key)!,
+          data: this.general.getChangedFields(item, existingMap.get(key)!)
+        });
+      } else {
+        acc.toCreate.push({ ...item, userId, createAt: date });
+      }
+      return acc;
+    }, { toCreate: [], toUpdate: [] });
+  
+    // Parallel execution
+    await Promise.all([
+      this.prisma.product_List.createMany({
+        data: toCreate,
+        skipDuplicates: true
+      }),
+      ...toUpdate.map(({ id, data }) => 
+        this.prisma.product_List.update({ where: { id }, data })
+      )
+    ]);
   }
+  
+  private async getExistingProductsMap(data: any[], userId: number) {
+    const existing = await this.prisma.product_List.findMany({
+      where: {
+        userId,
+        createAt: {
+          in: data.map(d => startOfDay(d.date ? new Date(d.date) : new Date()))
+        },
+        offer_id: { in: data.map(d => d.offer_id) }
+      }
+    });
+  
+    return new Map(
+      existing.map(item => [
+        `${item.userId}_${item.offer_id}_${item.createAt.toISOString()}`,
+        item
+      ])
+    );
+  }
+  
 
   async findById(id: number) {
     return this.prisma.product_List.findUnique({

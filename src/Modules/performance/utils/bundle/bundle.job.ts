@@ -14,13 +14,13 @@ export class BundleCorsJob {
   }
 
   
-  @Cron(CronExpression.EVERY_2_HOURS) 
-  async bundleRegistrationCron() {
-    const users = await this.user.getAllUser();
-    if (users.length > 0) {
-        users.map(async user => {
-            await this.bundle.registerBundle(user.id);
-        });
-    };    
-  };
+  // @Cron(CronExpression.EVERY_2_HOURS) 
+  // async bundleRegistrationCron() {
+  //   const users = await this.user.getAllUser();
+  //   if (users.length > 0) {
+  //       users.map(async user => {
+  //           await this.bundle.registerBundle(user.id);
+  //       });
+  //   };    
+  // };
 }

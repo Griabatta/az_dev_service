@@ -17,13 +17,17 @@ export class BundleRepo {
         })
     };
 
+    async getBundleAll() {
+        return this.prisma.bundle.findMany();
+    }
+
     async createBundle(data: Prisma.BundleCreateInput) {
         return this.prisma.bundle.create({
             data: data
         })
     };
 
-    async createManyBundle(data: Prisma.BundleCreateManyInput) {
+    async createManyBundle(data:any) {
         return this.prisma.bundle.createMany({
             data: data
         })

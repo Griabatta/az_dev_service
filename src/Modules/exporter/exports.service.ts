@@ -316,7 +316,7 @@ export class GoogleSheetsService {
           const validForm = await this.setValidFormForSheet(data || [], String(type));
           
           await this.overwriteSheet(SheetName(type), validForm || [], user.tableSheetId);
-          
+          this.logger.debug(`Sheets ${type} exported`)
 
         } catch (e) {
           await this.error.logError({
@@ -326,6 +326,7 @@ export class GoogleSheetsService {
             code: "500",
             priority: 2
           })
+          this.logger.error(`Sheets ${type} export failed`)
         }
     })
       

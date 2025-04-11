@@ -17,13 +17,9 @@ export class OzonPerformanceService {
 
   constructor(
 
-    private readonly errors: JournalErrorsService,
-
     private readonly campaingsRepo: PerformanceCampaingsRep,
 
-    private readonly tokenRepo: TokenRepo,
-
-    private readonly user: UserService
+    private readonly tokenRepo: TokenRepo
 
     // private readonly duplicate: DuplicateChecker,
 
@@ -31,36 +27,97 @@ export class OzonPerformanceService {
 
   
 
-  async getAllCampaings(params: headerDTO) {
-    const userId = Number(params.userId);
-    if (!userId) {
-      return new Error("User Not found");
-    };
-      try {
-        const trafaretsCampaings = await this.getCampaignForTrafarets(params);
-        const serachCampaigns = await this.getCampaignForSearch(params);
-        const bannerCampaigns = await this.getCampaignForBaner(params);
-        if (!trafaretsCampaings || !serachCampaigns || !bannerCampaigns) {
-         this.logger.error("NOT FOUND")
-        }
-        Logger.log("Import Success for campaings")
+  // async getAllCampaings(params: headerDTO) {
+  //   const userId = Number(params.userId);
+  //   if (!userId) {
+  //     return new Error("User Not found");
+  //   };
+  //     try {
+  //       var trafaretsCampaings: any;
+  //       var serachCampaigns: any;
+  //       var bannerCampaigns: any;
+
+  //       setTimeout(async () => { trafaretsCampaings = await this.getCampaignForTrafarets(params);}, 1000)
+  //       setTimeout(async () => {serachCampaigns = await this.getCampaignForSearch(params);}, 1000)
+  //       setTimeout(async () => {bannerCampaigns = await this.getCampaignForBaner(params);}, 1000)
         
-      } catch (e) {
-        return new Error(`Fetch failed: code: {${e.code || e.status}} message: {${e.message}}`)
-      }
-  }
+        
+  //       if (!trafaretsCampaings || !serachCampaigns || !bannerCampaigns) {
+  //        this.logger.error("NOT FOUND")
+  //       }
+  //       Logger.log("Import Success for campaings")
+        
+  //     } catch (e) {
+  //       return new Error(`Fetch failed: code: {${e.code || e.status}} message: {${e.message}}`)
+  //     }
+  // }
 
-  async getCampaignForTrafarets(params: headerDTO) { 
+  // async getCampaignForTrafarets(params: headerDTO) { 
+  //   try {
+      
+  //     if (!params.id) {
+  //       this.logger.error("User not found");
+  //     }
+  //     const userId = Number(params.id);
+
+  //     const token = await this.tokenRepo.getTokenByUserId(userId);
+
+  //     const url = `${this.API_URL}/client/campaign?advObjectType=SKU`;
+  //     const headers = {
+  //       "Authorization": `Bearer ${token?.token}`,
+  //       "Content-Type": "application/json"
+  //     };
+
+  //     const response = await axios.get(url,{ headers });
+      
+  //     const formatingData = response.data.list.map((item:any) => {
+  //       let data: CampaingCreateDto = {
+  //         userId: userId,
+  //         title: String(item.title),
+  //         campaignId: String(item.id),
+  //         cpmType: String(item.paymentType),
+  //         advObjectType: String(item.advObjectType),
+  //         fromDate: String(item.fromDate),
+  //         toDate: String(item.toDate),
+  //         dailyBudget: String(item.dailyBudget),
+  //         budget: String(item.budget),
+  //         status: String(item.state),
+  //         createdAt: startOfDay(new Date())
+  //       };
+  //       return data;
+  //     });
+  //     const campaignsChek = await this.campaingsRepo.getCampaignsByUserId(userId);
+  //     if (campaignsChek.length > 0) {
+  //         await this.campaingsRepo.upsertmany(formatingData, userId);
+  //     } else {
+  //       await this.campaingsRepo.createCapmaingsMany(formatingData);
+  //     };
+
+  //     return formatingData;
+
+  //   } catch (error) {
+  //     console.error('Error getting campaign templates:', error.message);
+  //     return {
+  //       success: false,
+  //       error: error.response?.data?.message || error.message,
+  //     };
+  //   }
+  // }
+
+  async getCampaignForType(params: headerDTO) { 
     try {
       
-      if (!params.userId) {
+      if (!params.id) {
         this.logger.error("User not found");
       }
-      const userId = Number(params.userId);
-
+      const userId = Number(params.id);
       const token = await this.tokenRepo.getTokenByUserId(userId);
+      if (token?.token === false) {
+        this.logger.error("Token not found")
+        return;
+      }
 
-      const url = `${this.API_URL}/client/campaign?advObjectType=SKU`;
+      const url = `${this.API_URL}/client/campaign?advObjectType=${params.typeRequest}`;
       const headers = {
         "Authorization": `Bearer ${token?.token}`,
         "Content-Type": "application/json"
@@ -86,9 +143,7 @@ export class OzonPerformanceService {
       });
       const campaignsChek = await this.campaingsRepo.getCampaignsByUserId(userId);
       if (campaignsChek.length > 0) {
-        formatingData.map(async item => {
-          await this.campaingsRepo.upsertCampaing(String(item.campaignId), item);
-        });
+        await this.campaingsRepo.upsertmany(formatingData, userId);
       } else {
         await this.campaingsRepo.createCapmaingsMany(formatingData);
       };
@@ -104,128 +159,74 @@ export class OzonPerformanceService {
     }
   }
 
-  async getCampaignForSearch(params: headerDTO) { 
-    try {
+  // async getCampaignForBaner(params: headerDTO) { 
+  //   try {
       
-      if (!params.userId) {
-        this.logger.error("User not found");
-      }
-      const userId = Number(params.userId);
-      const token = await this.tokenRepo.getTokenByUserId(userId);
+  //     if (!params.id) {
+  //       this.logger.error("User not found");
+  //     }
+  //     const userId = Number(params.id);
+  //     const token = await this.tokenRepo.getTokenByUserId(userId);
 
-      const url = `${this.API_URL}/client/campaign?advObjectType=SEARCH_PROMO`;
-      const headers = {
-        "Authorization": `Bearer ${token?.token}`,
-        "Content-Type": "application/json"
-      };
+  //     const url = `${this.API_URL}/client/campaign?advObjectType=BANNER`;
+  //     const headers = {
+  //       "Authorization": `Bearer ${token?.token}`,
+  //       "Content-Type": "application/json"
+  //     };
 
-      const response = await axios.get(url,{ headers });
+  //     const response = await axios.get(url,{ headers });
       
-      const formatingData = response.data.list.map((item:any) => {
-        let data: CampaingCreateDto = {
-          userId: userId,
-          title: String(item.title),
-          campaignId: String(item.id),
-          cpmType: String(item.paymentType),
-          advObjectType: String(item.advObjectType),
-          fromDate: String(item.fromDate),
-          toDate: String(item.toDate),
-          dailyBudget: String(item.dailyBudget),
-          budget: String(item.budget),
-          status: String(item.state),
-          createdAt: startOfDay(new Date())
-        };
-        return data;
-      });
-      const campaignsChek = await this.campaingsRepo.getCampaignsByUserId(userId);
-      if (campaignsChek.length > 0) {
-        formatingData.map(async item => {
-          await this.campaingsRepo.upsertCampaing(String(item.campaignId), item);
-        });
-      } else {
-        await this.campaingsRepo.createCapmaingsMany(formatingData);
-      };
+  //     const formatingData = response.data.list.map((item:any) => {
+  //       let data: CampaingCreateDto = {
+  //         userId: userId,
+  //         title: String(item.title),
+  //         campaignId: String(item.id),
+  //         cpmType: String(item.paymentType),
+  //         advObjectType: String(item.advObjectType),
+  //         fromDate: String(item.fromDate),
+  //         toDate: String(item.toDate),
+  //         dailyBudget: String(item.dailyBudget),
+  //         budget: String(item.budget),
+  //         status: String(item.state),
+  //         createdAt: startOfDay(new Date())
+  //       };
+  //       return data;
+  //     });
+  //     const campaignsChek = await this.campaingsRepo.getCampaignsByUserId(userId);
+  //     if (campaignsChek.length > 0) {
+  //       await this.campaingsRepo.upsertmany(formatingData, userId);
+  //     } else {
+  //       await this.campaingsRepo.createCapmaingsMany(formatingData);
+  //     };
 
-      return formatingData;
+  //     return formatingData;
 
-    } catch (error) {
-      console.error('Error getting campaign templates:', error.message);
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async getCampaignForBaner(params: headerDTO) { 
-    try {
-      
-      if (!params.userId) {
-        this.logger.error("User not found");
-      }
-      const userId = Number(params.userId);
-      const token = await this.tokenRepo.getTokenByUserId(userId);
-
-      const url = `${this.API_URL}/client/campaign?advObjectType=BANNER`;
-      const headers = {
-        "Authorization": `Bearer ${token?.token}`,
-        "Content-Type": "application/json"
-      };
-
-      const response = await axios.get(url,{ headers });
-      
-      const formatingData = response.data.list.map((item:any) => {
-        let data: CampaingCreateDto = {
-          userId: userId,
-          title: String(item.title),
-          campaignId: String(item.id),
-          cpmType: String(item.paymentType),
-          advObjectType: String(item.advObjectType),
-          fromDate: String(item.fromDate),
-          toDate: String(item.toDate),
-          dailyBudget: String(item.dailyBudget),
-          budget: String(item.budget),
-          status: String(item.state),
-          createdAt: startOfDay(new Date())
-        };
-        return data;
-      });
-      const campaignsChek = await this.campaingsRepo.getCampaignsByUserId(userId);
-      if (campaignsChek.length > 0) {
-        formatingData.map(async item => {
-          await this.campaingsRepo.upsertCampaing(String(item.campaignId), item);
-        });
-      } else {
-        await this.campaingsRepo.createCapmaingsMany(formatingData);
-      };
-
-      return formatingData;
-
-    } catch (error) {
-      console.error('Error getting campaign templates:', error.message);
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
+  //   } catch (error) {
+  //     console.error('Error getting campaign templates:', error.message);
+  //     return {
+  //       success: false,
+  //       error: error.response?.data?.message || error.message,
+  //     };
+  //   }
+  // }
 
 
-  async getCampaigns() {
-    const users = await this.user.getAllUsers();
-    for (const user of users) {
+  // async getCampaigns() {
+  //   const users = await this.user.getAllUsers();
 
-      const clientId = await decrypt(user.clientPerforId || "");
-      const apikey = await decrypt(user.clientSecret || "");
+  //     users?.map(async user => {
+  //       const clientId = await decrypt(user.clientPerforId || "");
+  //       const apikey = await decrypt(user.clientSecret || "");
 
-      const headers: headerDTO = {
-        clientPerForId: clientId,
-        clientSecret: apikey,
-        userId: String(user.id)
-      };
-      const result = await this.getAllCampaings(headers);
-      // res
-    }
-  }
+  //       const headers: headerDTO = {
+  //         clientPerForId: clientId,
+  //         clientSecret: apikey,
+  //         userId: String(user.id)
+  //       };
+  //       const result = await this.getAllCampaings(headers);
+  //     })
+  //     // res
+    
+  // }
 }
 

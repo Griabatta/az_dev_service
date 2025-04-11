@@ -6,7 +6,7 @@ import { TokenRepo } from "../token/repository/token.repository";
 import axios from "axios";
 import { JournalErrorsService } from "src/Modules/Errors/errors.service";
 import { FetchRawReportDTO } from "./models/report.dto";
-import { formatISO, lightFormat, parseISO, subDays } from "date-fns";
+import { formatISO, lightFormat, parseISO, startOfDay, subDays } from "date-fns";
 import { DuplicateChecker } from "src/utils/duplicateChecker";
 import { PrismaService } from "src/Modules/Prisma/prisma.service";
 import { Prisma } from "@prisma/client";
@@ -54,7 +54,7 @@ interface ParsedCampaignItem {
   modelsMoney: string;
   drr: string;
   createdAt: Date;
-  createdAtDB: string;
+  createdAtDB: Date;
   campaignId: string;
   userId: number;
   type: string;
@@ -78,7 +78,7 @@ export class ReportService {
 
     private readonly prisma: PrismaService
   ) {}
-
+  apiUrl = "https://api-performance.ozon.ru:443/api/client";
 
   private async processReportData (
     apiData: ApiCampaignData, 
@@ -86,16 +86,10 @@ export class ReportService {
     campaignType: string
   ): Promise<any | boolean> {
     const parsedData = this.parseResponse(apiData, userId, campaignType);
-    // const data = await this.duplicateChecker.checkAndFilterDuplicates(
-    //   'campaignItem',
-    //   parsedData,
-    //   ['campaignId', 'userId']
-    // );
-    // this.logger.log(data.length)
    try {
     if (parsedData.length > 0) {
-      const result =  await this.report.createCampaignItem(parsedData);
-      return result;
+      await this.report.bulkUpsertCampaignItems(parsedData, userId);     
+      return;
     }
     
    } catch (e) {
@@ -103,10 +97,9 @@ export class ReportService {
     this.logger.error("Create Campaigns")
     return false;
    }
-    // const result = await this.report.upsertCampaignItems(parsedData);
   }
 
-  apiUrl = "https://api-performance.ozon.ru:443/api/client";
+  
   async fetchReport(userId: number, body: FetchRawReportDTO) {
     const token = await this.token.getTokenByUserId(userId);
     if (!token) {
@@ -127,72 +120,72 @@ export class ReportService {
 
 
   async registrationReport() {
-    const users = await this.user.getAllUser();
-    if (users.length === 0) {
-      Logger.log("Users not found");
-      return;
-    }
+    try {
+      const users = await this.user.getAllUser();
+      if (!users.length) {
+        this.logger.log("Users not found");
+        return;
+      }
   
-    for (const user of users) {
-      try {
-        const reportByUser = await this.report.getReportByUserId(user.id);
-        const bundles = await this.bundle.getBundleByUserId(user.id);
-        
-        const registeredBundles = bundles.filter(bundle => bundle.status === "Registered");
-        
-        if (registeredBundles.length === 0 || registeredBundles[0]?.campaigns.length === 0) {
-          this.errors.logError({
+      // Обрабатываем пользователей последовательно с контролем ошибок
+      for (const user of users) {
+        try {
+          await this.processUserReport(user);
+        } catch (error) {
+          await this.errors.logError({
             userId: user.id,
-            message: "Report end not Success",
+            message: `Report processing failed: ${error.message}`,
             priority: 2,
             code: "500",
             serviceName: "Report"
           });
-          continue;
+          this.logger.error(`Failed to process report for user ${user.id}:`, error);
         }
-  
-        const bundleForReport = {
-          "campaigns": registeredBundles[0].campaigns,
-          "from": formatISO(subDays(new Date(), 30)),
-          "to": formatISO(new Date()),
-          "dateFrom": lightFormat(subDays(new Date(), 30), 'yyyy-MM-dd'),
-          "dateTo": lightFormat(new Date(), 'yyyy-MM-dd'),
-          "groupBy": "NO_GROUP_BY"
-        };
-  
-        const response = await this.fetchReport(user.id, bundleForReport);
-        const uuid = response?.UUID || response?.uuid;
         
-        if (!uuid || !registeredBundles[0]?.id) {
-          continue;
-        }
-  
-        const dataForReport = {
-          type: registeredBundles[0]?.type || undefined,
-          uuid: uuid,
-          status: "In progress",
-          userId: user.id,
-          bundleId: registeredBundles[0].id
-        };
-  
-        await this.report.createReport(dataForReport);
-        await this.bundle.updateStatusBundle(registeredBundles[0].id, "Reported");
-        this.logger.log(`Report: ${uuid} registered.`);
-        
-      } catch(e) {
-        this.errors.logError({
-          userId: user.id,
-          message: "Report failed",
-          priority: 2,
-          code: "404",
-          serviceName: "Report"
-        });
-        Logger.log(`Report failed for user ${user.id}`);
+        // Добавляем задержку между пользователями
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      
-      // Добавляем задержку между запросами
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 секунда
+    } catch (error) {
+      this.logger.error("Critical error in registrationReport:", error);
+      throw error;
     }
+  }
+  
+  private async processUserReport(user: any) {
+    const [reportByUser, bundles] = await Promise.all([
+      this.report.getReportByUserId(user.id),
+      this.bundle.getBundleByUserId(user.id)
+    ]);
+  
+    const registeredBundles = bundles.filter(b => b.status === "Registered");
+    if (!registeredBundles.length || !registeredBundles[0]?.campaigns?.length) {
+      return;
+    }
+  
+    const bundleForReport = {
+      campaigns: registeredBundles[0].campaigns,
+      from: formatISO(subDays(new Date(), 30)),
+      to: formatISO(new Date()),
+      dateFrom: lightFormat(subDays(new Date(), 30), 'yyyy-MM-dd'),
+      dateTo: lightFormat(new Date(), 'yyyy-MM-dd'),
+      groupBy: "NO_GROUP_BY"
+    };
+  
+    const response = await this.fetchReport(user.id, bundleForReport);
+    const uuid = response?.UUID || response?.uuid;
+    if (!uuid || !registeredBundles[0]?.id) return;
+    await Promise.all([
+      this.report.createReport({
+        type: registeredBundles[0]?.type || "",
+        uuid,
+        status: "In progress",
+        userId: user.id,
+        bundleId: registeredBundles[0].id
+      }),
+      this.bundle.updateStatusBundle(registeredBundles[0].id, "Reported")
+    ]);
+  
+    this.logger.log(`Report ${uuid} registered for user ${user.name}`);
   }
 
   async chekReadyReport() {
@@ -297,7 +290,7 @@ export class ReportService {
           modelsMoney: row.modelsMoney || '0,00',
           drr: row.drr || '0,00',
           createdAt: row.createdAt ? parseISO(row.createdAt) : new Date(),
-          createdAtDB: lightFormat(new Date(), 'yyyy-MM-dd'),
+          createdAtDB: startOfDay(new Date()),
           campaignId,
           userId,
           type: campaignType

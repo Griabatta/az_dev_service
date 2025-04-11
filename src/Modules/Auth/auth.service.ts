@@ -1,14 +1,18 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../Prisma/prisma.service';
 import { decrypt, encrypt } from 'src/tools/data.crypt';
 import { CreateUserDto } from './models/create-user.dto';
 import { TokenService } from '../performance/utils/token/token.service';
+import { TaskService } from '../Tasks/tasks.service';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService,
-    private readonly token: TokenService
+    private readonly token: TokenService,
+    @Inject(forwardRef(() => TaskService))
+    private readonly task: TaskService,
+    
   ) {}
 
   private async hashData(data: string): Promise<string> {
@@ -86,6 +90,8 @@ export class UserService {
       clientSecret: await decrypt(userCreated?.clientSecret || "")
     };
 
+    await this.task.createTaskForNewUser(userCreated)
+
 
     if (userCreated) {
       await this.token.createToken(paramsForToken)
@@ -98,13 +104,6 @@ export class UserService {
   async getUserById(id: number) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        tgId: true,
-        tableSheetId: true
-      },
     });
   };
 

@@ -1,6 +1,7 @@
 import { IsBoolean, IsNumber, IsOptional, isString, IsString } from "class-validator"
 
 export class CreateAnalyticsDto {
+  dimensionsDate:         string
   dimensions:             string
   revenue?:               number
   ordered_units?:         number
