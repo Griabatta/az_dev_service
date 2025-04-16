@@ -61,26 +61,26 @@ export class TaskService {
   }
 
   async processTaskBySeviceName(serviceName: string) {
+    
     const users: any[] = await this.prisma.user.findMany();
     const tasks = await this.prisma.task.findMany({
       where: {
         OR: [
           { serviceName, status: "PENDING" },
-          { serviceName, status: "IN_PROGRESS" }
+          { serviceName, status: "IN_PROGRESS"}
         ]
       }
     });
-  
+    
     if (users.length === 0 || tasks.length === 0) {
-      this.logger.error("Users or Tasks not found. Skip");
+      this.logger.error(`Users or Tasks not found. not found. Skip. ServiceName: ${serviceName}`);
       return;
     }
     
   
     const userTaskMap = new Map<number, { taskId: number; serviceName: string }>();
     tasks.forEach(task => userTaskMap.set(task.userId, {taskId: task.id, serviceName}));
-    
-    for (let user of users) {
+    const promiseTask = users.map(async user => {
       const task = userTaskMap.get(user.id);
       if (!task) {
         this.logger.debug("NOT TASK ID")
@@ -89,13 +89,18 @@ export class TaskService {
       try {
         await this.updateTaskStatus(task?.taskId, 'IN_PROGRESS');
         user.taskId = task.taskId;
-        const result = await this.processTask(serviceName, user); // Важно: await!
+        const result = await this.processTask(serviceName, user);
         await this.completeTask(task.taskId, result);
       } catch (error) {
         this.logger.error(`Task failed for user ${user.id}:`, error);
         await this.updateTaskStatus(task.taskId, 'FAILED');
       }
-    }
+    })
+    Promise.all(promiseTask)
+    .then(r => this.logger.log(r))
+    .catch(e => {
+      this.logger.error(e)
+    });
   }
 
   
@@ -265,7 +270,7 @@ export class TaskService {
         OR: [
           { 
             type: type,
-            status: "IN PROGRESS",
+            status: "IN_PROGRESS",
             serviceName: serviceName
           },
           { 
@@ -320,9 +325,10 @@ export class TaskService {
     if (dataForCreateTask.length > 0) {
       try {
         await this.createManyTask(dataForCreateTask);
-        this.logger.log("Tasks for Campaigns created");
+        this.logger.log(`Tasks for ${serviceName} created`);
       } catch (e) {
-        this.logger.error("Tasks for Campaigns create failed");
+        this.logger.error(e.message)
+        this.logger.error(`Tasks for ${serviceName} create failed`);
       }
     }
 

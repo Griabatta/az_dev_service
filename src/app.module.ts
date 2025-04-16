@@ -12,30 +12,31 @@ import { TaskModule } from './Modules/Tasks/tasks.module';
 import { PrismaModule } from './Modules/Prisma/prisma.module';
 import { JournalErrorsModule } from './Modules/Errors/errors.module';
 import { TokenModule } from './Modules/performance/utils/token/token.module';
+import { SheduleCronModule } from './scheduler/shedule.module';
 
 @Module({
   imports: [
-    // 1. Независимые модули
-    HttpModule,
+    // 1. Независимые базовые модули
     ConfigModule.forRoot(),
+    HttpModule,
     ScheduleModule.forRoot(),
     PrismaModule,
     JournalErrorsModule,
 
-    // 2. Модули с базовыми зависимостями
+    // 2. Основные функциональные модули
     UserModule,
     TokenModule,
     
-    // 3. Модули, зависящие от User/Token
-    PerformanceScheduleModule,
-    PerformanceModule,
+    // 3. Модули, зависящие от базовых
+    GoogleSheetsModule,
     SellerModule,
     TaskModule,
+    PerformanceModule,
     
-    // 4. Остальные
-    MPStatModule,
-    GoogleSheetsModule,
-    PerformanceScheduleModule
+    // 4. Специальные модули
+    SheduleCronModule,
+    PerformanceScheduleModule,
+    MPStatModule
   ]
 })
 export class AppModule {}

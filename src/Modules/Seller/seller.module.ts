@@ -15,12 +15,14 @@ import { ReviewService } from './ozon_review.service';
 import { PrismaModule } from '../Prisma/prisma.module';
 import { PerformanceModule } from '../performance/performance.module';
 import { generalForSeller } from './repositories/general';
+import { SheduleCronModule } from 'src/scheduler/shedule.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     JournalErrorsModule,
     PrismaModule,
+    forwardRef(() => SheduleCronModule),
     forwardRef(() => GoogleSheetsModule),
     forwardRef(() => PerformanceModule),
   ],
@@ -28,7 +30,6 @@ import { generalForSeller } from './repositories/general';
   providers: [
     OzonSellerService,
     DuplicateChecker,
-    OzonScheduler,
     SellerController,
     StockRepository,
     AnalyticsRepository,

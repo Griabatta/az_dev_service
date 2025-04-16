@@ -5,13 +5,15 @@ import { ReviewService } from "../Seller/ozon_review.service";
 import { TaskService } from "./tasks.service";
 import { TaskSchedule } from "./tasks.scheduler";
 import { PerformanceModule } from "../performance/performance.module";
+import { SheduleCronModule } from "src/scheduler/shedule.module";
 
 
 @Module({
   imports: [
     PrismaModule,
     forwardRef(() => SellerModule),
-    forwardRef(() => PerformanceModule)
+    forwardRef(() => PerformanceModule),
+    forwardRef(() => SheduleCronModule)
   ],
   providers: [TaskService, TaskSchedule],
   exports: [TaskService, TaskSchedule]

@@ -53,7 +53,7 @@ export class PerformanceTaskService implements OnModuleInit {
     await this.bundle.registerBundleForAllUsers();
   }
 
-  @Cron('*/2 * * * *')
+  @Cron('*/5 * * * *')
   async chekReadyReport() {
     await this.report.chekReadyReport();
   }

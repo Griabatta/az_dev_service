@@ -11,9 +11,9 @@ import { JournalErrorsModule } from '../Errors/errors.module';
 @Module({
   imports: [
     ConfigModule,
-    PerformanceModule,
+    forwardRef(() => PerformanceModule), 
     forwardRef(() => SellerModule),
-    UserModule,
+    forwardRef(() => UserModule),
     JournalErrorsModule
   ],
   providers: [

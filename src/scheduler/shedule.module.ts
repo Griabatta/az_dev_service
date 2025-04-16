@@ -5,16 +5,18 @@ import { GoogleSheetsModule } from 'src/Modules/exporter/exports.module';
 import { PerformanceModule } from 'src/Modules/performance/performance.module';
 import { PrismaModule } from 'src/Modules/Prisma/prisma.module';
 import { SellerModule } from 'src/Modules/Seller/seller.module';
+import { OzonScheduler } from './ozon.scheduler';
 
 @Module({
-  imports: 
-  [
+  imports: [
     ScheduleModule.forRoot(),
     forwardRef(() => PerformanceModule),
     forwardRef(() => SellerModule),
     JournalErrorsModule,
-    GoogleSheetsModule,
+    forwardRef(() => GoogleSheetsModule),
     PrismaModule,
   ],
+  providers: [OzonScheduler],
+  exports: [OzonScheduler]
 })
-export class AppModule {}
+export class SheduleCronModule {}

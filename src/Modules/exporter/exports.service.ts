@@ -298,37 +298,44 @@ export class GoogleSheetsService {
     if (!users) {
       Logger.log("Users not found")
     };
-    users.map(async user => {
-        try {
-          const data = await this.getDataForExportByNameRequest(type, user.id);
+    
+    try {
+      const promiseUser = users.map(async user => {
+        const data = await this.getDataForExportByNameRequest(type, user.id);
 
-          if (data?.length == 0) {
-            await this.error.logError({
-              userId: user.id,
-              message: "Bad request. No data.",
-              serviceName: type,
-              code: "400",
-              priority: 2
-            })
-            
-          }
-
-          const validForm = await this.setValidFormForSheet(data || [], String(type));
-          
-          await this.overwriteSheet(SheetName(type), validForm || [], user.tableSheetId);
-          this.logger.debug(`Sheets ${type} exported`)
-
-        } catch (e) {
+        if (data?.length == 0) {
           await this.error.logError({
             userId: user.id,
-            message: "Failed to export data to table.",
+            message: "Bad request. No data.",
             serviceName: type,
-            code: "500",
+            code: "400",
             priority: 2
           })
-          this.logger.error(`Sheets ${type} export failed`)
+          return;
+          
         }
-    })
+
+        const validForm = await this.setValidFormForSheet(data || [], String(type));
+        
+        await this.overwriteSheet(SheetName(type), validForm || [], user.tableSheetId);
+        
+      })
+      Promise.all(promiseUser)
+      .then(r => {
+        this.logger.debug(`Sheets ${type} exported`)
+      })
+
+    } 
+    catch (e) {
+      // await this.error.logError({
+      //   userId: user.id,
+      //   message: "Failed to export data to table.",
+      //   serviceName: type,
+      //   code: "500",
+      //   priority: 2
+      // })
+      this.logger.error(`Sheets ${type} export failed`)
+    }
       
       
   }

@@ -14,6 +14,7 @@ import { analystDTO, headerDTO, metricGroups, metricTemplate, productListDTO, st
 import { decrypt } from 'src/tools/data.crypt';
 import { UserService } from '../Auth/auth.service';
 import { formatISO, subDays, subMonths } from 'date-fns';
+import axiosRetry from 'axios-retry';
 
 @Injectable()
 export class OzonSellerService {
@@ -55,7 +56,7 @@ export class OzonSellerService {
         
       return;
     } catch (error) {
-      console.error(`Error for user ${user.id}:`, error);
+      this.logger.error(`Error for user ${user.id}:`, error);
       return false;
     }
     
@@ -211,8 +212,8 @@ export class OzonSellerService {
           offset: offset || 0,
           metrics
         };
-        
-        return await axios.post(url, body, { headers: httpHeader });
+        axiosRetry(axios, {retries: 3, retryDelay: axiosRetry.exponentialDelay});
+        return await axios.post(url, body, { headers: httpHeader })
       });
   
       const responses = await Promise.all(requests);
@@ -243,13 +244,16 @@ export class OzonSellerService {
       
       return mergedData;
     } catch (error) {
-      await this.erorrs.logError({
-        userId: Number(userId),
-        message: String(error.message) || "Unexpected error",
-        priority: 3,
-        code: '500',
-        serviceName: "Seller/Analytics/Data/request"
-      });
+      // await this.erorrs.logError({
+      //   userId: Number(userId),
+      //   message: String(error.message) || "Unexpected error",
+      //   priority: 3,
+      //   code: '500',
+      //   serviceName: "Seller/Analytics/Data/request"
+      // });
+      if (error.status) {
+
+      }
       this.logger.error(error.message)
       this.logger.error(error.code || error)
       return String(error.message);

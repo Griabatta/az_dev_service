@@ -14,15 +14,12 @@ import { SellerModule } from "../Seller/seller.module";
 
 @Module({
   imports: [
-
     ScheduleModule.forRoot(),
-    PerformanceScheduleModule,
     JournalErrorsModule,
     PrismaModule,
     forwardRef(() => TokenModule),
     forwardRef(() => UserModule),
     forwardRef(() => SellerModule)
-
   ],
   providers: [
     OzonPerformanceService,

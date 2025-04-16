@@ -26,32 +26,32 @@ export class OzonScheduler implements OnModuleInit {
     await this.exporter.ExportInSheet('Analytics');
   };
 
-  @Cron('*/11 * * * *')
+  @Cron('*/14 * * * *')
   async SendDataStock() {
     await this.exporter.ExportInSheet('Stock_Ware');
   };
 
-  @Cron('*/12 * * * *')
+  @Cron('*/16 * * * *')
   async SendDataTransaction() {
     await this.exporter.ExportInSheet('Transactions');
   };
 
-  @Cron('*/13 * * * *')
+  @Cron('*/20 * * * *')
   async SendDataProductList() {
     await this.exporter.ExportInSheet('ProductList');
   };
 
-  @Cron('*/14 * * * *')
+  @Cron('*/24 * * * *')
   async SendDataTrafarets() {
     await this.exporter.ExportInSheet('Trafarets');
   };
 
-  @Cron('*/15 * * * *')
+  @Cron('*/28 * * * *')
   async SendDataSearch() {
     await this.exporter.ExportInSheet('Search');
   };
 
-  @Cron('*/16 * * * *')
+  @Cron('*/32 * * * *')
   async SendDataBanner() {
     await this.exporter.ExportInSheet('Banner');
   };
