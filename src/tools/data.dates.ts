@@ -1,6 +1,6 @@
 
 
-
+// TODO: Оформить всё как helper
 
 export function MounthBack(date: Date = new Date()) {
     const date_from = new Date(date.setMonth(date.getMonth() - 1)).toISOString().slice(0, 10); // За последний месяц

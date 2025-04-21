@@ -46,7 +46,9 @@ export class ReportService {
                 const headers = {
                     "Authorization": `Bearer ${token}`
                 }
-                const response = await axios.get(`${apiUrl}${uuid}`, {headers});
+
+                // TODO: надо подумать в сторону того чтобы уйти от axios в пользу rxjs
+                const response = await axios.get(`${apiUrl}${uuid}`, {headers}); 
                 Logger.log(response);
             } catch(e) {
                 Logger.log(e);

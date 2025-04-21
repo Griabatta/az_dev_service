@@ -4,6 +4,7 @@ const algorithm = 'aes-256-cbc';
 const key = crypto.scryptSync(process.env.CRYPTO_KEY || 'default-secret', 'salt', 32);
 const iv = Buffer.alloc(16, 0); // Для простоты, в production используйте random iv
 
+// todo: Оформить всё как helper
 
   export async function encrypt(text: string): Promise<string> {
     const cipher = crypto.createCipheriv(algorithm, key, iv);

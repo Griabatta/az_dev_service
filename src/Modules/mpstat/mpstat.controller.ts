@@ -9,7 +9,7 @@ export class MpstatsController {
   @Post('/soinvest')
   async Soinvest(
     @Headers('x-mpstats-token') mpStatsToken: string,
-    @Req() req: Request,
+    @Req() req: Request, // TODO: вместо абстрактных классов нужно использовать наши реализации с известными нам определёнными параметрами
     @Res() res: Response
   ) {
     const headers = {

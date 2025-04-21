@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+// todo: Оформить всё как helper
+
 // Функция для конвертации SQL-даты в Date
 function parseSqlDateTime(sqlDate: string): Date | null {
     // if (sqlDate instanceof Date) return sqlDate;

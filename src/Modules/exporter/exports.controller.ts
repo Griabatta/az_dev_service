@@ -11,8 +11,13 @@ export class GoogleSheetsController {
     private readonly errors: JournalErrorsService
   ) {}
 
+  // TODO: Функции должны быть такими
+  // - replaceData - полностью перезаписывает всё что на листе (будет основной метод для работы с отчётами)
+  // - setData - перезаписывает повторяющиеся данные, новые добавляет
+  // - appendData - просто добавляет данные в конец или в начало (на этой штуке сделаем потом лог)
+
   @Post('/to-sheet')
-    async exportData(@Body() body: { 
+  async exportData(@Body() body: { 
       sheetName: string; 
       data: any[][];
       hidden?: boolean;
