@@ -86,6 +86,39 @@ CREATE TABLE "Stock_Warehouse" (
 );
 
 -- CreateTable
+CREATE TABLE "Stock_Analytic" (
+    "id" SERIAL NOT NULL,
+    "ads" TEXT NOT NULL,
+    "available_stock_count" INTEGER NOT NULL,
+    "cluster_id" INTEGER NOT NULL,
+    "cluster_name" TEXT NOT NULL,
+    "days_without_sales" INTEGER NOT NULL,
+    "excess_stock_count" INTEGER NOT NULL,
+    "expiring_stock_count" INTEGER NOT NULL,
+    "idc" TEXT NOT NULL,
+    "item_tags" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "offer_id" TEXT NOT NULL,
+    "other_stock_count" INTEGER NOT NULL,
+    "requested_stock_count" INTEGER NOT NULL,
+    "return_from_customer_stock_count" INTEGER NOT NULL,
+    "return_to_seller_stock_count" INTEGER NOT NULL,
+    "sku" TEXT NOT NULL,
+    "stock_defect_stock_count" INTEGER NOT NULL,
+    "transit_defect_stock_count" INTEGER NOT NULL,
+    "transit_stock_count" INTEGER NOT NULL,
+    "turnover_grade" TEXT NOT NULL,
+    "valid_stock_count" INTEGER NOT NULL,
+    "waiting_docs_stock_count" INTEGER NOT NULL,
+    "warehouse_id" TEXT NOT NULL,
+    "warehouse_name" TEXT NOT NULL,
+    "request_date" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "Stock_Analytic_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Transaction_List" (
     "id" SERIAL NOT NULL,
     "operation_id" TEXT NOT NULL,
@@ -126,6 +159,15 @@ CREATE TABLE "Product_List" (
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT (CURRENT_DATE)::timestamp,
 
     CONSTRAINT "Product_List_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SKU_List" (
+    "id" SERIAL NOT NULL,
+    "SKU" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "SKU_List_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -245,6 +287,18 @@ CREATE TABLE "Task" (
     CONSTRAINT "Task_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "CronLock" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "isLocked" BOOLEAN NOT NULL DEFAULT false,
+    "lockedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CronLock_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_clientId_key" ON "User"("clientId");
 
@@ -279,10 +333,16 @@ CREATE UNIQUE INDEX "Analytics_userId_dimensionsId_dimensionsDate_key" ON "Analy
 CREATE UNIQUE INDEX "Stock_Warehouse_userId_sku_warehouse_name_createAt_key" ON "Stock_Warehouse"("userId", "sku", "warehouse_name", "createAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Stock_Analytic_userId_request_date_key" ON "Stock_Analytic"("userId", "request_date");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Transaction_List_userId_operation_id_createAt_key" ON "Transaction_List"("userId", "operation_id", "createAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Product_List_userId_offer_id_createAt_key" ON "Product_List"("userId", "offer_id", "createAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SKU_List_userId_SKU_key" ON "SKU_List"("userId", "SKU");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PerformanceToken_token_key" ON "PerformanceToken"("token");
@@ -306,7 +366,7 @@ CREATE UNIQUE INDEX "ProductReview_userId_reviewId_published_at_key" ON "Product
 CREATE INDEX "Task_status_idx" ON "Task"("status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Task_userId_serviceName_type_key" ON "Task"("userId", "serviceName", "type");
+CREATE UNIQUE INDEX "CronLock_name_key" ON "CronLock"("name");
 
 -- AddForeignKey
 ALTER TABLE "CampaignTemplate" ADD CONSTRAINT "CampaignTemplate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -318,10 +378,16 @@ ALTER TABLE "Analytics" ADD CONSTRAINT "Analytics_userId_fkey" FOREIGN KEY ("use
 ALTER TABLE "Stock_Warehouse" ADD CONSTRAINT "Stock_Warehouse_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Stock_Analytic" ADD CONSTRAINT "Stock_Analytic_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Transaction_List" ADD CONSTRAINT "Transaction_List_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Product_List" ADD CONSTRAINT "Product_List_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SKU_List" ADD CONSTRAINT "SKU_List_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PerformanceToken" ADD CONSTRAINT "PerformanceToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

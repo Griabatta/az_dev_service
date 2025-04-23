@@ -26,7 +26,9 @@ export class TaskSchedule implements OnModuleInit {
       //   this.trafStartTask();
       //   this.serachStartTask();
       //   this.bannerStartTask();
-
+      // this.trafStartTask();
+      // this.bannerStartTask();
+      // this.serachStartTask();
       // this.createAnalytics();
     };
 
@@ -35,10 +37,15 @@ export class TaskSchedule implements OnModuleInit {
       await this.taskSerivce.processTaskBySeviceName('analytics')
     };
 
-    @Cron('0 */01 * * *')
-    async stockStartTask() {
-      await this.taskSerivce.processTaskBySeviceName('stock')
+    @Cron('*/40 * * * *')
+    async skuStartTask() {
+      await this.taskSerivce.processTaskBySeviceName('sku')
     }
+
+    @Cron('0 */01 * * *')
+    async stockAnalyticStartTask() {
+      await this.taskSerivce.processTaskBySeviceName('stock')
+    }    
 
     @Cron('30 */01 * * *')
     async transactionStartTask() {
@@ -65,6 +72,8 @@ export class TaskSchedule implements OnModuleInit {
       await this.taskSerivce.processTaskBySeviceName('banner')
     }
 
+    
+    
 
     // @Cron(CronExpression.EVERY_10_MINUTES)
     // async handlePerformanceTasks() {
@@ -79,37 +88,42 @@ export class TaskSchedule implements OnModuleInit {
     // }
 
     @Cron('0 */05 * * *')
-    async createAnalytics() {
+    async createAnalyticsTask() {
       await this.taskSerivce.createTaskForAllUsers('analytics', "SELLER")
     }
 
-    @Cron('10 */05 * * *')
-    async createStock() {
+    @Cron('* */23 * * *')
+    async createStockTask() {
       await this.taskSerivce.createTaskForAllUsers('stock', "SELLER")
+    }
+
+    @Cron('* * */1 * *')
+    async createSkuTask() {
+      await this.taskSerivce.createTaskForAllUsers('sku', "SELLER")
     }
     
     @Cron('20 */05 * * *')
-    async createTransaction() {
+    async createTransactionTask() {
       await this.taskSerivce.createTaskForAllUsers('transaction', "SELLER")
     }
 
     @Cron('40 */05 * * *')
-    async createProduct() {
+    async createProductTask() {
       await this.taskSerivce.createTaskForAllUsers('product', "SELLER")
     }
 
     @Cron('50 */05 * * *')
-    async createTraf() {
+    async createTrafTask() {
       await this.taskSerivce.createTaskForAllUsers('traf', "PERFORMANCE")
     }
 
     @Cron('10 */06 * * *')
-    async createSearch() {
+    async createSearchTask() {
       await this.taskSerivce.createTaskForAllUsers('search', "PERFORMANCE")
     }
 
     @Cron('20 */06 * * *')
-    async createBanner() {
+    async createBannerTask() {
       await this.taskSerivce.createTaskForAllUsers('banner', "PERFORMANCE")
     }
 

@@ -13,6 +13,7 @@ import { PrismaModule } from './Modules/Prisma/prisma.module';
 import { JournalErrorsModule } from './Modules/Errors/errors.module';
 import { TokenModule } from './Modules/performance/utils/token/token.module';
 import { SheduleCronModule } from './scheduler/shedule.module';
+import { TelegramModule } from './Modules/telegram/telegram.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SheduleCronModule } from './scheduler/shedule.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     JournalErrorsModule,
+    TelegramModule,
 
     // 2. Основные функциональные модули
     UserModule,

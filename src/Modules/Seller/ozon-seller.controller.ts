@@ -15,7 +15,35 @@ export class SellerController {
   async fetchUserData() {
     return await this.prisma.user.findMany();
   }
+  //-----------------Sku-----------------------
 
+  @Post('/sku')
+  async SkuListImport(
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    try {
+      const data = await this.OzonSellerService.fetchAndImportSKUList(undefined, req.body.userId, req.body);
+      res.json(data);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    };
+  };
+
+  //----------------StockAnalyitcs------------------
+
+  @Post('/stockAnalyt')
+  async StockAnalytics(
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    try {
+      const data = await this.OzonSellerService.fetchAndImportStockAnalytics(undefined, req.body.userId, req.body);
+      res.json(data);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    };
+  };
 
   //----------------ANALYTICS-------------------
 

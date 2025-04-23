@@ -18,8 +18,8 @@ export class PerformanceTaskService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    this.updateToken();
-    this.createBundle();
+    // this.updateToken();
+    // this.createBundle();
     // users.map(async user => {
     //   const campaigns = 
     // })
@@ -29,32 +29,32 @@ export class PerformanceTaskService implements OnModuleInit {
 
   
 
-  @Cron('*/25 * * * *')
-  async updateToken() {
-    try {
-      await this.token.updateTokens();
-    } catch (error) {
-      this.logger.error('Token update failed', error.code || error.status || error.message || error.text);
-    }
-  }
-
-  // @Cron(CronExpression.EVERY_5_HOURS)
-  // async getCampaigns() {
-  //   await this.perfor.getCampaigns();
+  // @Cron('*/25 * * * *')
+  // async updateToken() {
+  //   try {
+  //     await this.token.updateTokens();
+  //   } catch (error) {
+  //     this.logger.error('Token update failed', error.code || error.status || error.message || error.text);
+  //   }
   // }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async checkReport() {
-    await this.report.registrationReport();
-  }
+  // // @Cron(CronExpression.EVERY_5_HOURS)
+  // // async getCampaigns() {
+  // //   await this.perfor.getCampaigns();
+  // // }
 
-  @Cron(CronExpression.EVERY_5_HOURS)
-  async createBundle() {
-    await this.bundle.registerBundleForAllUsers();
-  }
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // async checkReport() {
+  //   await this.report.registrationReport();
+  // }
 
-  @Cron('*/5 * * * *')
-  async chekReadyReport() {
-    await this.report.chekReadyReport();
-  }
+  // @Cron(CronExpression.EVERY_5_HOURS)
+  // async createBundle() {
+  //   await this.bundle.registerBundleForAllUsers();
+  // }
+
+  // @Cron('*/5 * * * *')
+  // async chekReadyReport() {
+  //   await this.report.chekReadyReport();
+  // }
 }

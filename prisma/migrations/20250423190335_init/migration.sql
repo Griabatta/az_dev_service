@@ -1,6 +1,3 @@
--- DropIndex
-DROP INDEX "Task_userId_serviceName_type_key";
-
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;

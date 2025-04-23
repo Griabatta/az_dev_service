@@ -16,6 +16,8 @@ import { PrismaModule } from '../Prisma/prisma.module';
 import { PerformanceModule } from '../performance/performance.module';
 import { generalForSeller } from './repositories/general';
 import { SheduleCronModule } from 'src/scheduler/shedule.module';
+import { SKUListRepository } from './repositories/sku.repository';
+import { StockAnalyticRepository } from './repositories/stock-analytic.repository';
 
 @Module({
   imports: [
@@ -36,7 +38,9 @@ import { SheduleCronModule } from 'src/scheduler/shedule.module';
     TransactionRepository,
     ProductRepository,
     ReviewService,
-    generalForSeller
+    generalForSeller,
+    SKUListRepository,
+    StockAnalyticRepository
   ],
   exports: [StockRepository, AnalyticsRepository, TransactionRepository, ProductRepository, OzonSellerService, ReviewService]
 })

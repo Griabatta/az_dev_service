@@ -21,39 +21,39 @@ export class OzonScheduler implements OnModuleInit {
 
   }
   
-  @Cron('*/10 * * * *')
-  async SendDataAnalytics() {
-    await this.exporter.ExportInSheet('Analytics');
-  };
+  // @Cron('*/10 * * * *')
+  // async SendDataAnalytics() {
+  //   await this.exporter.ExportInSheet('Analytics');
+  // };
 
-  @Cron('*/14 * * * *')
-  async SendDataStock() {
-    await this.exporter.ExportInSheet('Stock_Ware');
-  };
+  // @Cron('*/14 * * * *')
+  // async SendDataStock() {
+  //   await this.exporter.ExportInSheet('Stock_Ware');
+  // };
 
-  @Cron('*/16 * * * *')
-  async SendDataTransaction() {
-    await this.exporter.ExportInSheet('Transactions');
-  };
+  // @Cron('*/16 * * * *')
+  // async SendDataTransaction() {
+  //   await this.exporter.ExportInSheet('Transactions');
+  // };
 
-  @Cron('*/20 * * * *')
-  async SendDataProductList() {
-    await this.exporter.ExportInSheet('ProductList');
-  };
+  // @Cron('*/20 * * * *')
+  // async SendDataProductList() {
+  //   await this.exporter.ExportInSheet('ProductList');
+  // };
 
-  @Cron('*/24 * * * *')
-  async SendDataTrafarets() {
-    await this.exporter.ExportInSheet('Trafarets');
-  };
+  // @Cron('*/24 * * * *')
+  // async SendDataTrafarets() {
+  //   await this.exporter.ExportInSheet('Trafarets');
+  // };
 
-  @Cron('*/28 * * * *')
-  async SendDataSearch() {
-    await this.exporter.ExportInSheet('Search');
-  };
+  // @Cron('*/28 * * * *')
+  // async SendDataSearch() {
+  //   await this.exporter.ExportInSheet('Search');
+  // };
 
-  @Cron('*/32 * * * *')
-  async SendDataBanner() {
-    await this.exporter.ExportInSheet('Banner');
-  };
+  // @Cron('*/32 * * * *')
+  // async SendDataBanner() {
+  //   await this.exporter.ExportInSheet('Banner');
+  // };
   
 }

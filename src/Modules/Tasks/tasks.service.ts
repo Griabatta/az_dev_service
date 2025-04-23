@@ -97,7 +97,6 @@ export class TaskService {
       }
     })
     Promise.all(promiseTask)
-    .then(r => this.logger.log(r))
     .catch(e => {
       this.logger.error(e)
     });
@@ -156,8 +155,7 @@ export class TaskService {
     switch (serviceName) {
       case 'analytics':
         return this.handleAnalyticsSync(user);
-      case 'stock':
-        return this.handleStockSync(user);
+      // 
       // case 'review':
       //   return this.handleReviewSync(task, user);
       case 'product':
@@ -170,6 +168,10 @@ export class TaskService {
         return this.handleSearchSync(user);
       case 'banner':
         return this.handlBanerSync(user);
+      case 'sku':
+        return this.handleSKUSync(user);
+      case 'stock':
+        return this.handleStockAnalytickSync(user);
       default:
         throw new Error(`Unknown service: ${user.serviceName}`);
     }
@@ -202,9 +204,15 @@ export class TaskService {
     return { synced: true, count: 100 };
   }
 
-  private async handleStockSync(user: any) {
+  private async handleStockAnalytickSync(user: any) {
     this.logger.log(`Processing product sync for task ${user.taskId}`);
-    await this.seller.fetchAndImportStock(user);
+    await this.seller.fetchAndImportStockAnalytics(user);
+    return { synced: true, count: 100 };
+  }
+
+  private async handleSKUSync(user: any) {
+    this.logger.log(`Processing product sync for task ${user.taskId}`);
+    await this.seller.fetchAndImportSKUList(user);
     return { synced: true, count: 100 };
   }
 
@@ -233,7 +241,7 @@ export class TaskService {
   // }
 
   async createTaskForNewUser(user: any) {
-    const serviceSellerName: string[] = ['analytics', 'stock', 'transaction', 'product']
+    const serviceSellerName: string[] = ['analytics', 'stock', 'transaction', 'product', 'sku']
     const servicePerfrorName: string[] = ['traf', 'search', 'banner']
     let dataForCreateTask: object[] = [];
     serviceSellerName.map(service => {

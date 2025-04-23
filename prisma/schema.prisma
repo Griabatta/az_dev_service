@@ -11,7 +11,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL") |
 }
 
 
@@ -34,6 +34,7 @@ model User {
  
   analytics          Analytics[]
   stock_warehouse    Stock_Warehouse[]
+  stock_analytic     Stock_Analytic[]
   transactions       Transaction_List[]
   product            Product_List[]
   performanceTokenId Int?              @unique
@@ -45,6 +46,7 @@ model User {
   camaignItem        CampaignItem[]    
   reviews            ProductReview[]
   tasks              Task[]
+  SKU_list           SKU_List[]
 }
 
 model CampaignTemplate {
@@ -125,6 +127,38 @@ model Stock_Warehouse {
    @@unique([userId, sku, warehouse_name, createAt], name: "stock_user_sku_stock_date")
 }
  
+model Stock_Analytic {
+  id                                Int       @id @default(autoincrement())
+  ads                               String
+  available_stock_count             Int
+  cluster_id                        Int
+  cluster_name                      String
+  days_without_sales                Int
+  excess_stock_count                Int
+  expiring_stock_count              Int
+  idc                               String
+  item_tags                         String
+  name                              String
+  offer_id                          String
+  other_stock_count                 Int
+  requested_stock_count             Int
+  return_from_customer_stock_count  Int
+  return_to_seller_stock_count      Int
+  sku                               String
+  stock_defect_stock_count          Int
+  transit_defect_stock_count        Int
+  transit_stock_count               Int
+  turnover_grade                    String
+  valid_stock_count                 Int
+  waiting_docs_stock_count          Int
+  warehouse_id                      String
+  warehouse_name                    String
+  request_date                      String
+  userId                            Int
+  user                              User  @relation(fields: [userId], references: [id])
+
+  // @@unique([userId, request_date], name: "user_date")
+}
 
 
 model Transaction_List {
@@ -179,6 +213,14 @@ model Product_List {
    @@unique([userId, offer_id, createAt], name: "product_user_offer_date")
 }
 
+model SKU_List {
+  id    Int   @id @default(autoincrement())
+  SKU   String
+
+  userId    Int
+  user      User  @relation(fields: [userId], references: [id])
+  @@unique([userId, SKU], name: "sku_userId")
+}
 
 model JournalErrors {
   id               Int       @id @default(autoincrement())

@@ -38,40 +38,6 @@ export class GoogleSheetsService {
     });
   }
 
-  // GET ALL DATA for seller
-  // async getDatabyDB(userId: number) {
-    
-  //   const userWithAllData = await this.prisma.user.findUnique({
-  //     where: { id: userId },
-  //     include: {
-  //       analytics: true,
-  //       stock_warehouse: true,
-  //       transactions: true,
-  //       product: true,
-  //       performanceToken: true
-  //     }
-  //   });
-  
-  //   if (!userWithAllData) {
-  //     this.logger.error('User not found');
-  //   }
-  
-  //   const exportData = {
-  //     userInfo: {
-  //       id: userWithAllData?.id,
-  //       email: userWithAllData?.email,
-  //       name: userWithAllData?.name,
-  //       tableSheetId: userWithAllData?.tableSheetId
-  //     },
-  //     analytics: userWithAllData?.analytics,
-  //     stock: userWithAllData?.stock_warehouse,
-  //     transactions: userWithAllData?.transactions,
-  //     products: userWithAllData?.product,
-  //     performanceTokens: userWithAllData?.performanceToken
-  //   };
-    
-  //   return exportData;
-  // }
  
   async ensureSheetExists(sheetName: string, hidden = false, tableId: string) {
     return this.createSheetIfNotExists(sheetName, hidden, tableId);
@@ -135,19 +101,7 @@ export class GoogleSheetsService {
     }
   }
 
-  // async sheetExists(sheetName: string): Promise<boolean> {
-  //   const spreadsheetId = this.configService.get('GOOGLE_SHEETS_SPREADSHEET_ID');
-  //   const authClient = await this.auth.getClient();
-  
-  //   const spreadsheet = await this.sheets.spreadsheets.get({
-  //     spreadsheetId,
-  //     auth: authClient,
-  //   });
-  
-  //   return spreadsheet.data.sheets?.some(
-  //     sheet => sheet.properties?.title === sheetName
-  //   ) ?? false;
-  // }
+
 
   async overwriteSheet(sheetName: string, values: any[][], tableId: string) {
     await this.ensureSheetExists(sheetName, false, tableId);
@@ -281,15 +235,7 @@ export class GoogleSheetsService {
     }
   };
   
-  // async exportData(params: { 
-  //   sheetName: string; 
-  //   data: any[][];
-  //   hidden?: boolean;
-  // }, tableId: string) {
-
-  //   await this.ensureSheetExists(params.sheetName, params.hidden ?? false);
-  //   return this.appendData(params.sheetName, params.data, undefined, tableId);
-  // }
+  
 
   async ExportInSheet(type: string) {
     
@@ -301,7 +247,8 @@ export class GoogleSheetsService {
     
     try {
       const promiseUser = users.map(async user => {
-        const data = await this.getDataForExportByNameRequest(type, user.id);
+        setTimeout(async () => {
+          const data = await this.getDataForExportByNameRequest(type, user.id);
 
         if (data?.length == 0) {
           await this.error.logError({
@@ -318,8 +265,9 @@ export class GoogleSheetsService {
         const validForm = await this.setValidFormForSheet(data || [], String(type));
         
         await this.overwriteSheet(SheetName(type), validForm || [], user.tableSheetId);
+        }, 2000)
         
-      })
+      }) 
       Promise.all(promiseUser)
       .then(r => {
         this.logger.debug(`Sheets ${type} exported`)
@@ -327,13 +275,6 @@ export class GoogleSheetsService {
 
     } 
     catch (e) {
-      // await this.error.logError({
-      //   userId: user.id,
-      //   message: "Failed to export data to table.",
-      //   serviceName: type,
-      //   code: "500",
-      //   priority: 2
-      // })
       this.logger.error(`Sheets ${type} export failed`)
     }
       

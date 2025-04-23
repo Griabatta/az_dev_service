@@ -1,3 +1,6 @@
+-- DropIndex
+DROP INDEX "Stock_Analytic_userId_request_date_key";
+
 -- AlterTable
 ALTER TABLE "Analytics" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
@@ -41,18 +44,3 @@ ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
 -- AlterTable
 ALTER TABLE "User" ALTER COLUMN "createAt" SET DEFAULT (CURRENT_DATE)::timestamp,
 ALTER COLUMN "updateAt" SET DEFAULT (CURRENT_DATE)::timestamp;
-
--- CreateTable
-CREATE TABLE "CronLock" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "isLocked" BOOLEAN NOT NULL DEFAULT false,
-    "lockedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "CronLock_pkey" PRIMARY KEY ("id")
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "CronLock_name_key" ON "CronLock"("name");
