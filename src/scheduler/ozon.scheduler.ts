@@ -1,10 +1,10 @@
 import { Injectable, Logger, OnModuleInit, Res } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { GoogleSheetsService } from 'src/Modules/exporter/exports.service';
-import { OzonPerformanceService } from 'src/Modules/performance/ozon_performance.service';
-import { PrismaService } from 'src/Modules/Prisma/prisma.service';
-import { ReviewService } from 'src/Modules/Seller/ozon_review.service';
-import { OzonSellerService } from 'src/Modules/Seller/ozon_seller.service';
+import { GoogleSheetsService } from 'src/exporter/exports.service';
+import { OzonPerformanceService } from 'src/Modules/ozon/performance/ozon_performance.service';
+import { PrismaService } from 'src/Prisma/prisma.service';
+import { ReviewService } from 'src/Modules/ozon/Seller/ozon_review.service';
+import { OzonSellerService } from 'src/Modules/ozon/Seller/ozon_seller.service';
 
 @Injectable()
 export class OzonScheduler implements OnModuleInit {

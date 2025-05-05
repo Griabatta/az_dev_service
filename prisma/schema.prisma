@@ -6,29 +6,251 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["config", "ozon", "wb"]
   // shadowDatabaseUrl = env("SHADOW_DATABASE_URL") |
+}
+// --- config ---
+model Users {
+  id                 Int     @id @default(autoincrement())
+  
+  tgId               String    @unique
+  tableSheetId       String     @unique
+
+  wb_Account         AccountWb?
+  ozon_Account       AccountOzon?
+
+  createAt           DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updateAt           DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+
+  @@schema("config")
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  type        String
+  serviceName String
+  status      String      @default("PENDING")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  metadata    Json?
+
+  @@schema("config")
+  @@index([status])
+}
+
+model TaskCompleted {
+  id          Int       @id @default(autoincrement())
+  type        String
+  service     String
+  status      String    @default("COMPLET")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @default(now())
+
+
+  @@schema("config")
+}
+
+model TaskUnCompleted {
+  id            Int       @id @default(autoincrement())
+  type          String  
+  service       String
+  errorCode     Int     
+  errorMessage  String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt @default(now())
+
+  @@schema("config")
+}
+
+model JournalErrors {
+  id               Int       @id @default(autoincrement())
+  
+  errorUserId      Int
+  errorCode        String?
+  errorMassage     String
+  errorPriority    Int
+  errorServiceName String
+  priorityDesign   String  @default("{0: low priority, 1: mean priority, 2: hight priority, 3: very hight priority}")
+
+  createdAt        DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updatedAt        DateTime  @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  @@schema("config")
+}
+
+// --- wb ---
+model AccountWb {
+  id                 Int         @id @default(autoincrement())
+  token              String      @unique
+
+
+  
+  user               Users?      @relation(fields: [userId], references: [id])
+  userId             Int?        @unique
+
+  orders             OrdersWb[]
+  sales              SalesWb[]
+  stock              StockWb[]
+
+  @@schema("wb")
+
+}
+
+model nmIdList {
+  id              Int         @id @default(autoincrement())
+  accountId       Int
+  nmid            String      @unique
+  imtID           String? 
+  nmUUID          String?
+  subjectID       String?
+  subjectName     String?
+  vendorCode      String?
+  title           String?
+  brand           String?
+  photos          String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt() @default(now())
+
+  @@schema("wb")
+}
+
+// model nmReport {
+
+// }
+
+model OrdersWb {
+  id                  Int       @id @default(autoincrement())
+
+  nmIdCreatedAt       String    @unique()
+
+  accountId           Int
+  account             AccountWb @relation(fields: [accountId], references: [id])
+
+  date                String?
+  warehouseName       String?
+  warehouseType       String?
+  countryName         String?
+  oblastOkrugName     String?
+  regionName          String?
+  supplierArticle     String?
+  nmId                Int
+  barcode             String?
+  category            String?
+  subject             String?
+  brand               String?
+  techSize            String?
+  incomeID            String? // default Int
+  isSupply            Boolean?
+  isRealization       Boolean?
+  totalPrice          Int?
+  discountPercent     Int?
+  spp                 Int?
+  finishedPrice       Int?
+  priceWithDisc       Int?
+  isCancel            Boolean?
+  cancelDate          String?
+  orderType           String?
+  sticker             String?
+  gNumber             String?
+  srid                String?
+
+  createdAt           DateTime?    @default(now())
+  updatedAt           DateTime    @updatedAt() @default(now())
+
+  @@schema("wb")
+}
+
+model SalesWb {
+  id            Int     @id @default(autoincrement())
+
+  accountId     Int
+  account       AccountWb @relation(fields: [accountId], references: [id])
+  
+  nmIdCreatedAt           String    @unique()
+
+  date                    String
+  warehouseName           String
+  warehouseType           String
+  countryName             String
+  oblastOkrugName         String
+  regionName              String
+  supplierArticle         String
+  nmId                    String    //default int
+  barcode                 String
+  category                String
+  subject                 String
+  brand                   String
+  techSize                String
+  incomeID                String    //default int
+  isSupply                Boolean   //b
+  isRealization           Boolean   //b
+  totalPrice              Int
+  discountPercent         Int
+  spp                     Int
+  paymentSaleAmount       Int
+  forPay                  Int
+  finishedPrice           Int
+  priceWithDisc           Int
+  saleID                  String
+  orderType               String
+  sticker                 String
+  gNumber                 String
+  srid                    String
+
+  @@schema("wb")
+}
+
+model StockWb {
+  id            Int       @id   @default(autoincrement())
+
+  accountId     Int
+  account       AccountWb @relation(fields: [accountId], references: [id])
+
+  nmIdCreatedAt         String  @unique()
+
+  warehouseName         String
+  supplierArticle       String
+  nmId                  String
+  barcode               String
+  quantity              Int
+  inWayToClient         Int
+  inWayFromClient       Int
+  quantityFull          Int
+  category              String
+  subject               String
+  brand                 String
+  techSize              String
+  Price                 Int
+  Discount              Int
+  isSupply              Boolean
+  isRealization         Boolean
+  SCCode                String
+
+  @@schema("wb")
 }
 
 
 
-model User {
+// --- ozon ---
+model AccountOzon {
   id                 Int        @id @default(autoincrement())
  
   clientId           String     @unique 
   apiKey             String     @unique
   clientPerforId     String?    @unique
   clientSecret       String?    @unique
-  mpStatToken        String?
-  name               String?
-  email              String?     @unique
-  tgId               String?    @unique
-  tableSheetId       String     @unique
+  
  
+  user               Users?      @relation(fields: [userId], references: [id])
+  userId             Int?       @unique
   createAt           DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt           DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
  
@@ -37,42 +259,72 @@ model User {
   stock_analytic     Stock_Analytic[]
   transactions       Transaction_List[]
   product            Product_List[]
+  SKU_list           SKU_List[]
+
   performanceTokenId Int?              @unique
-  performanceToken   PerformanceToken? 
+  performanceToken   PerformanceToken?
 
   campaintTemplates  CampaignTemplate[]
-  reports            Reports[]
-  bundle             Bundle[]       
-  camaignItem        CampaignItem[]    
-  reviews            ProductReview[]
-  tasks              Task[]
-  SKU_list           SKU_List[]
+  // reports            Reports[]
+  // bundle             Bundle[]
+  camaignItem        CampaignItem[]
+  // reviews            ProductReview[]
+  
+
+  @@schema("ozon")
+}
+
+model StatisticDaily {
+  id                        Int       @id @default(autoincrement())
+  
+  campaignIdCreatedAt       String    @unique
+
+  campaignId                Int 
+  title                     String
+  date                      String
+  views                     String
+  clicks                    String
+  moneySpent                String
+  avgBid                    String
+  orders                    String
+  ordersMoney               String
+
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt @default(now())
+
+  @@schema("ozon")
 }
 
 model CampaignTemplate {
-  id                Int     @id @default(autoincrement())
-  campaignId        String  
-  status            String
-  cpmType           String?
-  advObjectType     String?
-  title             String?
-  fromDate          String?
-  toDate            String?
-  dailyBudget       String?
-  budget            String?                                       
-  
-  user              User       @relation(fields: [userId], references: [id])
-  userId            Int
-  
-  createdAt         DateTime @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-  updatedAt         DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))   
+  id                  Int     @id @default(autoincrement())
 
-  @@unique([campaignId, userId, createdAt], name: "Campaignt_campId_userId_date")
+  campaignIdCreatedAt String @unique()
+
+  campaignId          String  
+  status              String
+  cpmType             String?
+  advObjectType       String?
+  title               String?
+  fromDate            String?
+  toDate              String?
+  dailyBudget         String?
+  budget              String?                                       
+
+  account             AccountOzon       @relation(fields: [accountId], references: [id])
+  accountId           Int
+
+  createdAt           DateTime @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  updatedAt           DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))   
+
+  @@schema("ozon")
 }
 
 
 model Analytics {
+
   id                  Int   @id @default(autoincrement())
+
+  dimensionsIdCreatedAt String @unique()
 
   dimensionsId        Int?
   dimensionsName      String?
@@ -96,19 +348,21 @@ model Analytics {
   delivered_units     Int?        
   position_category   Int?       
 
-  userId              Int
-  user                User   @relation(fields: [userId], references: [id])
+  accountId              Int
+  account                AccountOzon   @relation(fields: [accountId], references: [id])
   
   
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))   
 
-  @@unique([userId, dimensionsId, dimensionsDate], name: "analytics_user_dimensions_date")
+  @@schema("ozon")
 }
 
 model Stock_Warehouse {
   id                  Int     @id @default(autoincrement()) 
   
+  skuCreatedAt        String  @unique()
+
   sku	                Int
   warehouse_name      String
   item_code	          String
@@ -118,51 +372,59 @@ model Stock_Warehouse {
   reserved_amount	    Int
   idc                 Float?
   
-  userId              Int
-  user                User      @relation(fields: [userId], references: [id])
+  accountId              Int
+  account                AccountOzon      @relation(fields: [accountId], references: [id])
   
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
 
-   @@unique([userId, sku, warehouse_name, createAt], name: "stock_user_sku_stock_date")
+  // @@unique([accountId, sku, warehouse_name, createAt], name: "stock_user_sku_stock_date")
+  @@schema("ozon")
 }
  
 model Stock_Analytic {
-  id                                Int       @id @default(autoincrement())
-  ads                               String
-  available_stock_count             Int
-  cluster_id                        Int
-  cluster_name                      String
-  days_without_sales                Int
-  excess_stock_count                Int
-  expiring_stock_count              Int
-  idc                               String
-  item_tags                         String
-  name                              String
-  offer_id                          String
-  other_stock_count                 Int
-  requested_stock_count             Int
-  return_from_customer_stock_count  Int
-  return_to_seller_stock_count      Int
-  sku                               String
-  stock_defect_stock_count          Int
-  transit_defect_stock_count        Int
-  transit_stock_count               Int
-  turnover_grade                    String
-  valid_stock_count                 Int
-  waiting_docs_stock_count          Int
-  warehouse_id                      String
-  warehouse_name                    String
-  request_date                      String
-  userId                            Int
-  user                              User  @relation(fields: [userId], references: [id])
+
+  id                                  Int       @id @default(autoincrement())
+
+  offerIdCreatedAt                    String    @unique()
+
+  ads                                 String
+  available_stock_count               Int
+  cluster_id                          Int
+  cluster_name                        String
+  days_without_sales                  Int
+  excess_stock_count                  Int
+  expiring_stock_count                Int
+  idc                                 String
+  item_tags                           String
+  name                                String
+  offer_id                            String
+  other_stock_count                   Int
+  requested_stock_count               Int
+  return_from_customer_stock_count    Int
+  return_to_seller_stock_count        Int
+  sku                                 String
+  stock_defect_stock_count            Int
+  transit_defect_stock_count          Int
+  transit_stock_count                 Int
+  turnover_grade                      String
+  valid_stock_count                   Int
+  waiting_docs_stock_count            Int
+  warehouse_id                        String
+  warehouse_name                      String
+  request_date                        String
+  accountId                            Int
+  account                              AccountOzon  @relation(fields: [accountId], references: [id])
 
   // @@unique([userId, request_date], name: "user_date")
+  @@schema("ozon")
 }
 
 
 model Transaction_List {
   id                      Int     @id @default(autoincrement()) 
+
+  operationIdCreatedAt    String  @unique()
 
   operation_id            String  
   operation_type          String
@@ -181,21 +443,23 @@ model Transaction_List {
   items                   String?
   services                String?
 
-  userId                  Int
-  user                    User      @relation(fields: [userId], references: [id])
+  accountId                  Int
+  account                    AccountOzon      @relation(fields: [accountId], references: [id])
   
-  createAt                DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-  updateAt                DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  createAt                DateTime   @default(now())
+  updateAt                DateTime   @updatedAt @default(now())
 
-  @@unique([userId, operation_id, createAt], name: "transaction_user_date_operId")
+  @@schema("ozon")
 }
 
 
 model Product_List {
   id                  Int     @id @default(autoincrement()) 
+
+  offerIdCreatedAt    String  @unique()
   
-  userId              Int
-  user                User      @relation(fields: [userId], references: [id])
+  accountId              Int
+  account                AccountOzon      @relation(fields: [accountId], references: [id])
   //
   archived            Boolean
   has_fbo_stocks      Boolean
@@ -210,139 +474,124 @@ model Product_List {
   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
 
-   @@unique([userId, offer_id, createAt], name: "product_user_offer_date")
+  // @@unique([accountId, offer_id, createAt], name: "product_user_offer_date")
+  @@schema("ozon")
 }
 
 model SKU_List {
-  id    Int   @id @default(autoincrement())
-  SKU   String
+  id    Int     @id @default(autoincrement())
+  SKU   String  @unique()
 
-  userId    Int
-  user      User  @relation(fields: [userId], references: [id])
-  @@unique([userId, SKU], name: "sku_userId")
-}
-
-model JournalErrors {
-  id               Int       @id @default(autoincrement())
+  accountId    Int
+  account      AccountOzon  @relation(fields: [accountId], references: [id])
   
-  errorUserId      Int
-  errorCode        String?
-  errorMassage     String
-  errorPriority    Int
-  errorServiceName String
-  priorityDesign   String  @default("{0: low priority, 1: mean priority, 2: hight priority, 3: very hight priority}")
-
-  createdAt        DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-  updatedAt        DateTime  @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  @@schema("ozon")
 }
+
+
 
 model PerformanceToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
   
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int      @unique 
+  account      AccountOzon     @relation(fields: [accountId], references: [id])
+  accountId    Int      @unique 
 
   updatedAt DateTime @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp")) 
   createdAt DateTime @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+  @@schema("ozon")
 }
 
-model Reports {
-  id        Int       @id @default(autoincrement())
-  status    String    @default("In Progress")
-  uuid      String    @unique
-  type      String    @default("SKU")
+// model Reports {
+//   id        Int       @id @default(autoincrement())
+//   status    String    @default("In Progress")
+//   uuid      String    @unique
+//   type      String    @default("SKU")
 
-  userId    Int
-  user      User      @relation(fields: [userId],references: [id])
+//   accountId    Int
+//   account      AccountOzon      @relation(fields: [accountId],references: [id])
   
-  bundle    Bundle    @relation(fields: [bundleId], references: [id])
-  bundleId  Int       
+//   bundle    Bundle    @relation(fields: [bundleId], references: [id])
+//   bundleId  Int       
 
-  createAt  DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-  updateAt  DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-}
+//   createAt  DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+//   updateAt  DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+//   @@schema("ozon")
+// }
 
-model Bundle {
-  id        Int       @id @default(autoincrement())
-  type      String?   
-  campaigns String[]  @unique
-  status    String    @default("In progress")
+// model Bundle {
+//   id        Int       @id @default(autoincrement())
+//   type      String?   
+//   campaigns String[]  @unique
+//   status    String    @default("In progress")
 
-  userId    Int      
-  user      User      @relation(fields: [userId], references: [id])
+//   accountId    Int      
+//   account      AccountOzon      @relation(fields: [accountId], references: [id])
 
-  reports   Reports[]
+//   reports   Reports[]
 
-  createAt  DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-  updateAt  DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-}
+//   createAt  DateTime  @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+//   updateAt  DateTime  @updatedAt() @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+//   @@schema("ozon")
+// }
 
 model CampaignItem {
-  id          Int      @id @default(autoincrement())
-  searchQuery String?   
-  sku         String?   
-  title       String?   
-  price       String?   
-  views       Int?
-  clicks      Int?
-  ctr         String?   
-  toCart      Int?
-  avgBid      String?   
-  moneySpent  String?   
-  orders      Int   ?   
-  ordersMoney String?   
-  models      Int?
-  modelsMoney String?   
-  drr         String?   
-  createdAt   DateTime @default(now())   
-  createdAtDB DateTime  
-  campaignId  String  
-  userId      Int       
-  user        User   @relation(fields: [userId], references: [id])
-  type        String
 
-  @@unique([userId, createdAtDB, campaignId], name: "campaign_user_date_camp")
+  id             Int      @id @default(autoincrement())
+
+  skuCreatedAt   String @unique()
+
+  searchQuery    String?   
+  sku            String?   
+  title          String?   
+  price          String?   
+  views          Int?
+  clicks         Int?
+  ctr            String?   
+  toCart         Int?
+  avgBid         String?   
+  moneySpent     String?   
+  orders         Int   ?   
+  ordersMoney    String?   
+  models         Int?
+  modelsMoney    String?   
+  drr            String?   
+  createdAt      DateTime @default(now())   
+  createdAtDB    DateTime  
+  campaignId     String  
+  accountId      Int       
+  account        AccountOzon   @relation(fields: [accountId], references: [id])
+  type           String
+
+  // @@unique([accountId, createdAtDB, campaignId], name: "campaign_user_date_camp")
+  @@schema("ozon")
 }
 
-model ProductReview {
-  id                 Int      @id @default(autoincrement())
-  reviewId           String
-  comments_amount    Int
-  is_rating_participant Boolean
-  order_status        String
-  photos_amount       Int
-  published_at        String
-  rating              Int
-  offerId             String
-  sku                 String
-  product_id          String
-  status              String
-  text                String
-  videos_amount       Int
+// model ProductReview {
+//   id                 Int      @id @default(autoincrement())
+//   reviewId           String
+//   comments_amount    Int
+//   is_rating_participant Boolean
+//   order_status        String
+//   photos_amount       Int
+//   published_at        String
+//   rating              Int
+//   offerId             String
+//   sku                 String
+//   product_id          String
+//   status              String
+//   text                String
+//   videos_amount       Int
 
-  userId             Int
-  user               User     @relation(fields: [userId], references: [id])
+//   accountId             Int
+//   account               AccountOzon     @relation(fields: [accountId], references: [id])
 
-  createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
-  updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+//   createAt            DateTime   @default(dbgenerated("(CURRENT_DATE)::timestamp"))
+//   updateAt            DateTime   @updatedAt @default(dbgenerated("(CURRENT_DATE)::timestamp"))
   
-  @@unique([userId, reviewId, published_at], name: "Review_user_review_date")
-}
-
-model Task {
-  id          Int      @id @default(autoincrement())
-  type        String
-  serviceName String
-  status      String      @default("PENDING")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  metadata    Json?
-
-  userId      Int
-  user        User        @relation(fields: [userId], references: [id])
-  @@index([status])
-}
+//   @@unique([accountId, reviewId, published_at], name: "Review_user_review_date")
+//   @@schema("ozon")
+// }
 
 model CronLock {
   id        String   @id @default(cuid())
@@ -351,4 +600,5 @@ model CronLock {
   lockedAt  DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@schema("config")
 }

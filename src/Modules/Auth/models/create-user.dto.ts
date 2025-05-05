@@ -3,38 +3,12 @@ import { IsEmail, IsNotEmpty, IsOptional, isString, IsString } from 'class-valid
 
 export class CreateUserDto {
   @IsString()
-  clientId: string; // Будет зашифрован
+  tgId       :string
   
   @IsString()
-  apiKey: string; // Будет зашифрован
+  tableSheetId :string
   
   @IsString()
-  clientSecret: string; // Будет зашифрован
-
-  @IsString()
-  clientPerFormanceId: string;
-
-  @ApiProperty({ description: 'Email пользователя', example: 'user@example.com' })
-  @IsEmail()
-  email: string;
-
-  @ApiProperty({ description: 'ID таблицы Google Sheets', required: true })
-  @IsString()
-  @IsNotEmpty()
-  tableSheetId: string;
-
-  @ApiProperty({ description: 'Telegram ID', required: false })
-  @IsString()
   @IsOptional()
-  tgId?: string;
-
-  @ApiProperty({ description: 'Имя пользователя', required: false })
-  @IsString()
-  @IsOptional()
-  name?: string;
-
-  @ApiProperty({ description: 'MoySklad токен', required: false })
-  @IsString()
-  @IsOptional()
-  mpStatToken?: string;
+  name        :string
 }

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../Modules/Prisma/prisma.service';
+import { PrismaService } from '../Prisma/prisma.service';
 
 @Injectable()
 export class DuplicateChecker {

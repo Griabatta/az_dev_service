@@ -1,12 +1,12 @@
 
 import { forwardRef, Module } from '@nestjs/common';
-import { PrismaService } from 'src/Modules/Prisma/prisma.service';
+import { PrismaService } from 'src/Prisma/prisma.service';
 import { UserController } from './auth.controller';
 import { UserService } from './auth.service';
 import { UserRep } from './repository/user.repository';
-import { TokenModule } from '../performance/utils/token/token.module';
-import { PrismaModule } from '../Prisma/prisma.module';
-import { TaskModule } from '../Tasks/tasks.module';
+import { TokenModule } from '../ozon/performance/utils/token/token.module';
+import { PrismaModule } from '../../Prisma/prisma.module';
+import { TaskModule } from '../../Tasks/tasks.module';
 
 @Module({
   imports: [

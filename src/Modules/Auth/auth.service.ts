@@ -1,10 +1,10 @@
 import { ConflictException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../Prisma/prisma.service';
+import { PrismaService } from '../../Prisma/prisma.service';
 import { decrypt, encrypt } from 'src/tools/data.crypt';
 import { CreateUserDto } from './models/create-user.dto';
-import { TokenService } from '../performance/utils/token/token.service';
-import { TaskService } from '../Tasks/tasks.service';
+import { TokenService } from '../ozon/performance/utils/token/token.service';
+import { TaskService } from '../../Tasks/tasks.service';
 
 @Injectable()
 export class UserService {
@@ -22,80 +22,37 @@ export class UserService {
 
   async createUser(dto: CreateUserDto) {
 
-    const ClientId = await encrypt(dto.clientId);
-    const ApiKey = await encrypt(dto.apiKey);
-    const ClientSecret = await encrypt(dto.clientSecret || "");
-    const ClientPerforId = await encrypt(dto.clientPerFormanceId || "");
-    const mpstat = await encrypt(dto.mpStatToken || "");
-
-    
-
-    const existingUser = await this.prisma.user.findFirst({
+    const existingUser = await this.prisma.users.findFirst({
       where: {
         OR: [
-          { clientId: dto.clientId },
-          { apiKey: dto.apiKey },
-          { clientPerforId: dto.clientSecret || undefined }, // Обработка optional полей
-          { clientSecret: dto.clientPerFormanceId || undefined }
+          { tgId: dto.tgId },
+          { tableSheetId: dto.tableSheetId },
         ]
       },
       select: {
-        clientId: true,
-        apiKey: true,
-        clientPerforId: true,
-        clientSecret: true
+        tableSheetId: true,
+        tgId: true
       }
     });
     
     if (existingUser) {
       const conflicts: string[] = [];
-      if (existingUser.clientId === dto.clientId) conflicts.push('clientId');
-      if (existingUser.apiKey === dto.apiKey) conflicts.push('apiKey');
-      if (existingUser.clientPerforId === dto.clientPerFormanceId) conflicts.push('clientPerforId');
-      if (existingUser.clientSecret === dto.clientSecret) conflicts.push('clientSecret');
+      if (existingUser.tableSheetId === dto.tableSheetId) conflicts.push('tableSheetId');
+      if (existingUser.tgId === dto.tgId) conflicts.push('tgId');
       
       throw new ConflictException(`User already existis`);
     };
 
 
-    const userCreate = await this.prisma.user.create({
+    const userCreate = await this.prisma.users.create({
       data: {
-        clientId: ClientId,
-        apiKey: ApiKey,
-        clientPerforId: ClientPerforId,
-        clientSecret: ClientSecret,
-        email: dto.email,
         tableSheetId: dto.tableSheetId,
         tgId: dto.tgId,
-        name: dto.name,
-        mpStatToken: mpstat,
       },
     });
 
     
-    const userCreated = await this.prisma.user.findFirst({
-      where: {
-        clientId: ClientId
-      },
-      select: {
-        id: true,
-        clientPerforId: true,
-        clientSecret: true
-      }
-    })
-
-    const paramsForToken = {
-      userId: userCreated?.id,
-      clientPerForId: await decrypt(userCreated?.clientPerforId || ""),
-      clientSecret: await decrypt(userCreated?.clientSecret || "")
-    };
-
-    await this.task.createTaskForNewUser(userCreated)
-
-
-    if (userCreated) {
-      await this.token.createToken(paramsForToken)
-    }
+    
 
 
     return userCreate;
