@@ -77,7 +77,7 @@ export class WbSaleService {
             const account = await this.accountWBService.getAccountWBByTgId({ tgId })
             if (account?.wb_Account) {
                 const dataForRecordInDb = await this.getSaleByAPI(account.wb_Account);
-                if (dataForRecordInDb?.message) { // if error
+                if (dataForRecordInDb?.code !== 200) { // if error
                     return { message: dataForRecordInDb.message, code: dataForRecordInDb.code } 
                 }
                 const resultInjection = await this.wbSaleRepository.upserSalesManyRecord(dataForRecordInDb); // import in database

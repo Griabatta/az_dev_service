@@ -125,15 +125,15 @@ export class WbArticulesService {
         return allResults;
   	}
 
-  	public async import(tgId: string) { // set data in database
+  	public async import(tgId: string, params: any) { // set data in database
         try {
             const account = await this.accountWBService.getAccountWBByTgId({ tgId })
             if (account?.wb_Account) {
-				const dataForRecordInDb = await this.getArticulesByAPI(account.wb_Account);
-				if (dataForRecordInDb?.message) { // if error
+				const dataForRecordInDb = await this.getArticulesByAPI(account.wb_Account, params.updatedAt, params.nmID);
+				if (dataForRecordInDb?.code !== 200) { // if error
 					return { message: dataForRecordInDb.message, code: dataForRecordInDb.code } 
 				}
-				await this.wbArticulesRepository.createArticulesManyRecords(dataForRecordInDb); // import in database
+				await this.wbArticulesRepository.createArticulesManyRecords(dataForRecordInDb?.data); // import in database
 				return { message: "Ok", code: 200 } // return result injection in database
 			}
         } catch (e) {

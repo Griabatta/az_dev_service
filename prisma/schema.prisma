@@ -420,6 +420,7 @@ model Stock_Analytic {
   @@schema("ozon")
 }
 
+//nest g app name_app 
 
 model Transaction_List {
   id                      Int     @id @default(autoincrement()) 
